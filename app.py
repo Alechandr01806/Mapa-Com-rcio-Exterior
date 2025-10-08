@@ -4,7 +4,7 @@ import plotly.express as px
 
 # Configuração da página
 st.set_page_config(page_title="Comex Municipal", layout="wide")
-st.title("📊 Cirador de Mapa do Comércio Exterior")
+st.title("📊 Criador de Mapa do Comércio Exterior")
 
 # Entrada do usuário
 uploaded_file = st.file_uploader("Envie seu arquivo CSV ou Excel do ComexStat:", type=["csv", "xlsx"])
@@ -555,4 +555,5 @@ if uploaded_file:
         st.plotly_chart(fig_imp, use_container_width=True)
 else:
     st.info("📥 Envie um arquivo CSV ou Excel para começar.")
+
 
