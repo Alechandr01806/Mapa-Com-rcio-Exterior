@@ -545,6 +545,14 @@ if uploaded_file:
             color_continuous_scale='redor'
         )
         fig_imp.update_layout(
+            title=None,
+            geo=dict(
+                showframe=False,
+                showcoastlines=True,
+                projection_type='equirectangular',
+                bgcolor='#F4F4F0',
+                landcolor='rgba(206,206,206,1)',
+                showcountries=True),
             geo=dict(showframe=False, showcoastlines=True, projection_type='equirectangular'),
             width=900,
             height=500,
@@ -555,5 +563,6 @@ if uploaded_file:
         st.plotly_chart(fig_imp, use_container_width=True)
 else:
     st.info("📥 Envie um arquivo CSV ou Excel para começar.")
+
 
 
