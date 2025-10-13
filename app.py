@@ -546,14 +546,9 @@ if uploaded_file:
         )
         fig_imp.update_layout(
             title=None,
-            geo=dict(
-                showframe=False,
-                showcoastlines=True,
-                projection_type='equirectangular',
-                bgcolor='#F4F4F0',
-                landcolor='rgba(206,206,206,1)',
-                showcountries=True),
-            geo=dict(showframe=False, showcoastlines=True, projection_type='equirectangular'),
+            geo=dict(showframe=False, showcoastlines=True, projection_type='equirectangular', bgcolor='#F4F4F0',
+            landcolor='rgba(206,206,206,1)',
+            showcountries=True),
             width=900,
             height=500,
             margin={"r":0,"t":0,"l":0,"b":0},
@@ -563,6 +558,7 @@ if uploaded_file:
         st.plotly_chart(fig_imp, use_container_width=True)
 else:
     st.info("📥 Envie um arquivo CSV ou Excel para começar.")
+
 
 
 
