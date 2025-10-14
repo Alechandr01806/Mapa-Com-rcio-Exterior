@@ -556,10 +556,7 @@ if uploaded_file:
         )
 
         st.plotly_chart(fig_imp, use_container_width=True)
-else:
-    st.info("📥 Envie um arquivo CSV ou Excel para começar.")
-
-st.subheader("📈 Comparativo Exportações x Importações", divider="green")
+        st.subheader("📈 Comparativo Exportações x Importações", divider="green")
 
 # Combina as bases exportação e importação
 df_exp["Fluxo"] = "Exportação"
@@ -667,6 +664,11 @@ st.plotly_chart(fig_prod, use_container_width=True)
 st.markdown("#### 🗂️ Legenda das Seções:")
 legenda = df_filtrado_prod[["Código Seção", "Descrição Seção"]].drop_duplicates().sort_values("Código Seção")
 st.dataframe(legenda, use_container_width=True)
+
+else:
+    st.info("📥 Envie um arquivo CSV ou Excel para começar.")
+
+
 
 
 
