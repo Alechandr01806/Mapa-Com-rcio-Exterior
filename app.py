@@ -613,60 +613,9 @@ fig_comp.update_layout(
 
 st.plotly_chart(fig_comp, use_container_width=True)
 
-# =======================
-# COMPARATIVO POR PRODUTO
-# =======================
-st.subheader("🧩 Comparativo por Produto (Código Seção)", divider="orange")
-
-# Agregação por produto e fluxo
-df_produto = df_comex.groupby(["Código Seção", "Descrição Seção", "Fluxo"], as_index=False)["Valor"].sum()
-
-# Ordenar pelos produtos mais exportados
-df_top_produtos = df_produto[df_produto["Fluxo"] == "Exportação"].nlargest(10, "Valor")
-codigos_top = df_top_produtos["Código Seção"].unique()
-
-# Filtrar somente os top 10 produtos (para comparação visual mais limpa)
-df_filtrado_prod = df_produto[df_produto["Código Seção"].isin(codigos_top)]
-
-# Gráfico comparativo de barras
-fig_prod = px.bar(
-    df_filtrado_prod,
-    x="Código Seção",
-    y="Valor",
-    color="Fluxo",
-    barmode="group",
-    text_auto=".2s",
-    hover_data=["Descrição Seção"],
-    title="Top 10 Seções - Exportações x Importações",
-    labels={
-        "Valor US$ FOB": "Valor (US$ FOB)",
-        "Código Seção": "Código da Seção",
-        "Fluxo": "Tipo de Fluxo"
-    },
-    color_discrete_map={
-        "Exportação": "#2ca02c",  # verde
-        "Importação": "#d62728"   # vermelho
-    }
-)
-
-fig_prod.update_layout(
-    xaxis=dict(tickmode="linear"),
-    template="plotly_white",
-    legend_title_text="Fluxo",
-    width=1000,
-    height=500,
-    hovermode="x unified"
-)
-
-st.plotly_chart(fig_prod, use_container_width=True)
-
-# Legenda de produtos (código → descrição)
-st.markdown("#### 🗂️ Legenda das Seções:")
-legenda = df_filtrado_prod[["Código Seção", "Descrição Seção"]].drop_duplicates().sort_values("Código Seção")
-st.dataframe(legenda, use_container_width=True)
-
 else:
     st.info("📥 Envie um arquivo CSV ou Excel para começar.")
+
 
 
 
