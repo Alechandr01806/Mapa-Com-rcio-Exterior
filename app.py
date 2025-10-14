@@ -622,10 +622,10 @@ st.plotly_chart(fig_comp, use_container_width=True)
 st.subheader("🧩 Comparativo por Produto (Código Seção)", divider="orange")
 
 # Agregação por produto e fluxo
-df_produto = df_comex.groupby(["Código Seção", "Descrição Seção", "Fluxo"], as_index=False)["Valor"].sum()
+df_produto = df_comex.groupby(["Código Seção", "Descrição Seção", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
 
 # Ordenar pelos produtos mais exportados
-df_top_produtos = df_produto[df_produto["Fluxo"] == "Exportação"].nlargest(10, "Valor")
+df_top_produtos = df_produto[df_produto["Fluxo"] == "Exportação"].nlargest(10, "Valor US$ FOB")
 codigos_top = df_top_produtos["Código Seção"].unique()
 
 # Filtrar somente os top 10 produtos (para comparação visual mais limpa)
@@ -642,7 +642,7 @@ fig_prod = px.bar(
     hover_data=["Descrição Seção"],
     title="Top 10 Seções - Exportações x Importações",
     labels={
-        "Valor": "Valor (US$ FOB)",
+        "Valor US$ FOB": "Valor (US$ FOB)",
         "Código Seção": "Código da Seção",
         "Fluxo": "Tipo de Fluxo"
     },
@@ -667,6 +667,7 @@ st.plotly_chart(fig_prod, use_container_width=True)
 st.markdown("#### 🗂️ Legenda das Seções:")
 legenda = df_filtrado_prod[["Código Seção", "Descrição Seção"]].drop_duplicates().sort_values("Código Seção")
 st.dataframe(legenda, use_container_width=True)
+
 
 
 
