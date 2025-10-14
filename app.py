@@ -556,46 +556,12 @@ if uploaded_file:
         )
 
         st.plotly_chart(fig_imp, use_container_width=True)
-        st.subheader("📈 Comparativo Exportações x Importações", divider="green")
-        df_exp["Fluxo"] = "Exportação"
-        df_imp["Fluxo"] = "Importação"
-        df_comex = pd.concat([df_exp, df_imp], ignore_index=True)
-        df_comex["Valor"] = pd.to_numeric(df_comex["Valor"], errors="coerce")
-        tipo_comparativo = st.radio("Visualizar por:", ["Anual", "Trimestral", "Mensal"], horizontal=True)
-        if tipo_comparativo == "Anual":
-            df_comp = df_comex.groupby(["Ano", "Fluxo"], as_index=False)["Valor"].sum()
-            eixo_x = "Ano"
-        elif tipo_comparativo == "Trimestral":
-            df_comp = df_comex.groupby(["Ano", "Trimestre", "Fluxo"], as_index=False)["Valor"].sum()
-            df_comp["Período"] = df_comp["Ano"].astype(str) + " - " + df_comp["Trimestre"]
-             eixo_x = "Período"
-        else:
-            df_comp = df_comex.groupby(["Ano", "Mês", "Fluxo"], as_index=False)["Valor"].sum()
-            df_comp["Período"] = df_comp["Ano"].astype(str) + " - " + df_comp["Mês"]
-            eixo_x = "Período"
-        df_pivot = df_comp.pivot_table(index=eixo_x, columns="Fluxo", values="Valor", fill_value=0)
-        df_pivot["Saldo Comercial"] = df_pivot["Exportação"] - df_pivot["Importação"]
-        df_pivot = df_pivot.reset_index()
-
-        fig_comp = px.line(df_pivot,
-                           x=eixo_x,
-                           y=["Exportação", "Importação", "Saldo Comercial"],
-                           markers=True,
-                           labels={"value": "US$ FOB", "variable": "Indicador", eixo_x: "Período"},
-                           title=f"Evolução {tipo_comparativo.lower()} do Comércio Exterior")
-        fig_comp.update_layout(
-            legend_title_text="Indicador",
-            hovermode="x unified",
-            template="plotly_white",
-            width=1000,
-            height=500)
-        st.plotly_chart(fig_comp, use_container_width=True)
-
 else:
     st.info("📥 Envie um arquivo CSV ou Excel para começar.")
 
 
     
+
 
 
 
