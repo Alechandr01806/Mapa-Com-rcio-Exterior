@@ -76,7 +76,7 @@ if consultar:
         )
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
 
-        df['País_en'] = df['País'].replace({
+        df['País'] = df['País'].replace({
             "Afghanistan": "Afghanistan",
     "África do Sul": "South Africa",
     "Albânia": "Albania",
@@ -320,4 +320,5 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
 
