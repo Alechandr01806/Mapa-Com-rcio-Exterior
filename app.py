@@ -483,7 +483,7 @@ if consultar:
             locations="País",
             locationmode="country names",
             color="Valor US$ FOB",
-            color_continuous_scale="blugrn",
+            color_continuous_scale="Blues",
         )
         st.plotly_chart(fig_exp, use_container_width=True)
 
@@ -517,6 +517,7 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
 
 
 
