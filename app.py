@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 import requests
 import urllib3
-import math
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -51,7 +50,6 @@ with st.sidebar:
     ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
     ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2024)
     codigo_municipio = st.text_input("Código IBGE do município", "2704302")
-    periodo = st.selectbox("Período de visualização", ["Mensal", "Trimestral", "Anual"])
     consultar = st.button("🔍 Consultar dados")
 
 if consultar:
@@ -77,51 +75,13 @@ if consultar:
             inplace=True,
         )
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
-        df["Mês"] = pd.to_numeric(df["Mês"], errors="coerce")
 
-        # ===========================
-        # Agrupamento por período
-        # ===========================
-        if periodo == "Mensal":
-            df["Período"] = df["Ano"].astype(str) + "-" + df["Mês"].astype(str).str.zfill(2)
-            grupo = ["Período", "Fluxo"]
-        elif periodo == "Trimestral":
-            df["Trimestre"] = df["Mês"].apply(lambda x: math.ceil(x / 3))
-            df["Período"] = df["Ano"].astype(str) + "T" + df["Trimestre"].astype(str)
-            grupo = ["Período", "Fluxo"]
-        else:  # Anual
-            df["Período"] = df["Ano"].astype(str)
-            grupo = ["Período", "Fluxo"]
+        # --- Separar fluxos ---
+        df_exp = df[df["Fluxo"] == "export"].copy()
+        df_imp = df[df["Fluxo"] == "import"].copy()
 
-        df_agg = df.groupby(grupo, as_index=False)["Valor US$ FOB"].sum()
-        df_pivot = df_agg.pivot(index="Período", columns="Fluxo", values="Valor US$ FOB").fillna(0)
-        df_pivot["Saldo Comercial"] = df_pivot.get("export", 0) - df_pivot.get("import", 0)
-        df_pivot = df_pivot.reset_index()
-
-        # ===========================
-        # Gráfico de Comparativo
-        # ===========================
-        st.subheader(f"📈 Comparativo de Fluxos ({periodo})")
-        fig_comp = px.line(
-            df_pivot,
-            x="Período",
-            y=["export", "import", "Saldo Comercial"],
-            markers=True,
-            labels={
-                "Período": periodo,
-                "value": "US$ FOB",
-                "variable": "Indicador",
-                "export": "Exportação",
-                "import": "Importação",
-            },
-        )
-        st.plotly_chart(fig_comp, use_container_width=True)
-
-        # ===========================
-        # Mapas (mantidos)
-        # ===========================
+        # --- Mapa de Exportações ---
         st.subheader("🌍 Exportações por País")
-        df_exp = df[df["Fluxo"] == "export"]
         fig_exp = px.choropleth(
             df_exp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
             locations="País",
@@ -131,8 +91,8 @@ if consultar:
         )
         st.plotly_chart(fig_exp, use_container_width=True)
 
+        # --- Mapa de Importações ---
         st.subheader("🌎 Importações por País")
-        df_imp = df[df["Fluxo"] == "import"]
         fig_imp = px.choropleth(
             df_imp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
             locations="País",
@@ -141,3 +101,23 @@ if consultar:
             color_continuous_scale="reds",
         )
         st.plotly_chart(fig_imp, use_container_width=True)
+
+        # --- Comparativo Export x Import x Saldo ---
+        st.subheader("📈 Comparativo de Fluxos e Saldo")
+        df_exp["Fluxo"] = "Exportação"
+        df_imp["Fluxo"] = "Importação"
+        df_comex = pd.concat([df_exp, df_imp], ignore_index=True)
+
+        df_comp = df_comex.groupby(["Ano", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
+        df_pivot = df_comp.pivot_table(index="Ano", columns="Fluxo", values="Valor US$ FOB", fill_value=0)
+        df_pivot["Saldo Comercial"] = df_pivot["Exportação"] - df_pivot["Importação"]
+        df_pivot = df_pivot.reset_index()
+
+        fig_comp = px.line(
+            df_pivot,
+            x="Ano",
+            y=["Exportação", "Importação", "Saldo Comercial"],
+            markers=True,
+            labels={"value": "US$ FOB", "variable": "Indicador"},
+        )
+        st.plotly_chart(fig_comp, use_container_width=True)
