@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import requests
 import urllib3
+import ast
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -128,4 +129,5 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
 
