@@ -76,6 +76,13 @@ if consultar:
         )
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
 
+        with open("paises.txt", "r", encoding="utf-8") as f:
+            conteudo = f.read()
+        conteudo = "{" + conteudo.strip().strip(",") + "}"
+        traducao_paises = ast.literal_eval(conteudo)
+
+        df["País"] = df["País"].replace(traducao_paises)
+
         # --- Separar fluxos ---
         df_exp = df[df["Fluxo"] == "export"].copy()
         df_imp = df[df["Fluxo"] == "import"].copy()
@@ -121,3 +128,4 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
