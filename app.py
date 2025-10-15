@@ -84,7 +84,7 @@ if consultar:
         st.subheader("🌍 Exportações por País")
         fig_exp = px.choropleth(
             df_exp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
-            locations="País_en",
+            locations="País",
             locationmode="country names",
             color="Valor US$ FOB",
             color_continuous_scale="blugrn",
@@ -121,6 +121,7 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
 
 
 
