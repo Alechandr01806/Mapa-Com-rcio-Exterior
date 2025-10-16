@@ -13,19 +13,25 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 @st.cache_data
 def carregar_municipios():
     municipios = pd.read_csv("municipios.csv", dtype={"codigo_ibge": str})
+    municipios["nome_municipio"] = municipios["nome_municipio"].str.strip()
+    municipios["nome_uf"] = municipios["nome_uf"].str.strip()
     return municipios
 
 # ==================================
 # 2️⃣ Acessar o código do município
 # ==================================
-def obter_codigo_municipio(nome_municipio, municipios_df):
+def obter_codigo_municipio(nome_municipio, uf, municipios_df):
     nome_municipio = nome_municipio.strip().lower()
+    uf = uf.strip().lower()
+
+    # Filtra por nome E UF
     resultado = municipios_df[
-        municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)
+        (municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)) &
+        (municipios_df["nome_uf"].str.lower() == uf)
     ]
 
     if len(resultado) == 0:
-        st.error("Município não encontrado.")
+        st.error("Município não encontrado. Verifique o nome e o estado.")
         return None
 
     elif len(resultado) == 1:
@@ -92,17 +98,20 @@ municipios = carregar_municipios()
 with st.sidebar:
     st.header("Parâmetros da consulta")
     nome_municipio = st.text_input("Digite o nome do município")
+    lista_ufs = sorted(municipios["nome_uf"].unique())
+    uf = st.selectbox("Selecione o estado (UF)", lista_ufs)
+
     ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
     ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2024)
     consultar = st.button("🔍 Consultar dados")
 
 if consultar:
-    codigo_municipio = obter_codigo_municipio(nome_municipio, municipios)
+    codigo_municipio = obter_codigo_municipio(nome_municipio, uf, municipios)
 
     if codigo_municipio is None:
         st.warning("Município não encontrado ou não selecionado.")
     else:
-        st.info(f"Consultando dados para {nome_municipio} (código {codigo_municipio})...")
+        st.info(f"Consultando dados para {nome_municipio} - {uf} (código {codigo_municipio})...")
         df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
 
         if df.empty:
@@ -110,6 +119,7 @@ if consultar:
         else:
             st.success(f"✅ {len(df)} registros carregados!")
 
+        # === Mapeamento dos meses ===
         meses = {
             1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
             4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
@@ -120,6 +130,7 @@ if consultar:
         df["monthNumber"] = pd.to_numeric(df["monthNumber"], errors="coerce")
         df["Mês"] = df["monthNumber"].map(meses)
 
+        # --- Limpeza e ajustes ---
         df.rename(
             columns={
                 "year": "Ano",
@@ -134,6 +145,7 @@ if consultar:
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
         df = df.sort_values(by=["Ano", "Mês"])
 
+        # --- Tradução de países ---
         with open("paises.txt", "r", encoding="utf-8") as f:
             conteudo = f.read()
         conteudo = "{" + conteudo.strip().strip(",") + "}"
@@ -141,9 +153,11 @@ if consultar:
 
         df["País"] = df["País"].replace(traducao_paises)
 
+        # --- Separar fluxos ---
         df_exp = df[df["Fluxo"] == "export"].copy()
         df_imp = df[df["Fluxo"] == "import"].copy()
 
+        # --- Mapa de Exportações ---
         st.subheader("🌍 Exportações por País")
         fig_exp = px.choropleth(
             df_exp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
@@ -154,6 +168,7 @@ if consultar:
         )
         st.plotly_chart(fig_exp, use_container_width=True)
 
+        # --- Mapa de Importações ---
         st.subheader("🌎 Importações por País")
         fig_imp = px.choropleth(
             df_imp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
@@ -164,6 +179,7 @@ if consultar:
         )
         st.plotly_chart(fig_imp, use_container_width=True)
 
+        # --- Comparativo Export x Import x Saldo ---
         st.subheader("📈 Comparativo de Fluxos e Saldo")
         df_exp["Fluxo"] = "Exportação"
         df_imp["Fluxo"] = "Importação"
@@ -183,6 +199,7 @@ if consultar:
         )
         st.plotly_chart(fig_comp, use_container_width=True)
 
+        # --- Exibir base de dados ---
         st.title("📋 Dados")
         with st.expander("Mostrar Base de Dados", expanded=False):
             st.dataframe(df, use_container_width=True)
