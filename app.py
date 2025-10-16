@@ -23,7 +23,6 @@ def obter_codigo_municipio(nome_municipio, municipios_df):
     nome_municipio = nome.strip().lower()
     municipios_df["nome_municipio_lower"] = municipios_df["nome_municipio"].str.lower()
     resultado = municipios_df.loc[municipios_df["nome_municipio_lower"] == nome]
-    ]
     if len(resultado) == 1:
         return resultado.iloc[0]["codigo_ibge"]
     elif len(resultado) > 1:
@@ -186,6 +185,7 @@ if consultar:
             st.dataframe(df, use_container_width=True)
             st.write("Fonte: Comexstat")
         
+
 
 
 
