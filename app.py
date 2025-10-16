@@ -16,7 +16,9 @@ def carregar_municipios():
     municipios = pd.read_csv("municipios.csv", dtype={"codigo_ibge": str})
     return municipios
 
-# ================================================
+# ==================================
+# 2️⃣ Acessar o código do município
+# ==================================
 def obter_codigo_municipio(nome_municipio, municipios_df):
     nome_municipio = nome_municipio.strip().lower()
     resultado = municipios_df[
@@ -95,12 +97,21 @@ if consultar:
             st.warning("Nenhum dado retornado pela API.")
         else:
             st.success(f"✅ {len(df)} registros carregados!")
-            st.dataframe(df)
+
+        meses = {
+            1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
+            4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
+            7: "07. Julho", 8: "08. Agosto", 9: "09. Setembro",
+            10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
+        }
+
+        df["monthNumber"] = pd.to_numeric(df["monthNumber"], errors="coerce")
+        df["Mês"] = df["monthNumber"].map(meses)
+            
 
         # --- Limpeza e ajustes ---
         df.rename(
             columns={
-                "month": "Mês",
                 "year": "Ano",
                 "country": "País",
                 "section": "Descrição Seção",
@@ -111,6 +122,7 @@ if consultar:
         )
         
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
+        df = df.sort_values(by=['Ano', 'Mês'])
 
         with open("paises.txt", "r", encoding="utf-8") as f:
             conteudo = f.read()
@@ -164,6 +176,12 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+        st.title("📋 Dados")
+        with st.expander("Mostrar Base de Dados", expanded=False):
+            st.dataframe(df, use_container_width=True)
+            st.write("Fonte: Comexstat")
+        
+
 
 
 
