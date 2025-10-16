@@ -17,31 +17,20 @@ def carregar_municipios():
     return municipios
 
 # ================================================
-
-def obter_codigo_municipio(nome, municipios_df):
-    nome = nome.strip().lower()
-    municipios_df["nome_municipio_lower"] = municipios_df["nome_municipio"].str.lower()
-    encontrados = municipios_df.loc[municipios_df["nome_municipio_lower"] == nome]
-
-    if len(encontrados) == 1:
-        # Apenas um resultado → retorna o código
-        return encontrados.iloc[0]["codigo_ibge"], None
-
-    elif len(encontrados) > 1:
-        # Mais de um resultado → pede ao usuário para escolher
-        st.warning("Mais de um município encontrado. Selecione o correto abaixo:")
-        escolha = st.selectbox(
-            "Selecione o município completo:",
-            [f"{row['nome_municipio']} - {row['nome_uf']} (IBGE {row['codigo_ibge']})"
-             for _, row in encontrados.iterrows()]
-        )
-        # Extrai o código do texto selecionado
-        codigo = escolha.split("IBGE ")[-1].replace(")", "")
-        return codigo, encontrados
-
+def obter_codigo_municipio(nome_municipio, municipios_df):
+    nome_municipio = nome_municipio.strip().lower()
+    resultado = municipios_df[
+        municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)
+    ]
+    if len(resultado) == 1:
+        return resultado.iloc[0]["codigo_ibge"]
+    elif len(resultado) > 1:
+        st.warning("Mais de um município encontrado. Selecione um nome mais específico.")
+        st.dataframe(resultado)
+        return None
     else:
-        # Nenhum resultado
-        return None, None
+        st.error("Município não encontrado.")
+        return None
 
 # =======================================
 # 3️⃣ Função principal da API do Comex Stat
@@ -175,6 +164,7 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
 
 
 
