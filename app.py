@@ -19,7 +19,7 @@ def carregar_municipios():
 # ==================================
 # 2️⃣ Acessar o código do município
 # ==================================
-def obter_codigo_municipio(nome_municipio, municipios_df):
+def obter_codigo_municipio(nome, municipios_df):
     nome_municipio = nome.strip().lower()
     municipios_df["nome_municipio_lower"] = municipios_df["nome_municipio"].str.lower()
     resultado = municipios_df.loc[municipios_df["nome_municipio_lower"] == nome]
@@ -185,6 +185,7 @@ if consultar:
             st.dataframe(df, use_container_width=True)
             st.write("Fonte: Comexstat")
         
+
 
 
 
