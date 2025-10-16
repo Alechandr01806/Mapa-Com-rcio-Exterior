@@ -20,23 +20,31 @@ def carregar_municipios():
 # 2️⃣ Acessar o código do município
 # ==================================
 def obter_codigo_municipio(nome, municipios_df):
-    nome_municipio = nome.strip().lower()
+    nome = nome.strip().lower()
     municipios_df["nome_municipio_lower"] = municipios_df["nome_municipio"].str.lower()
-    resultado = municipios_df.loc[municipios_df["nome_municipio_lower"] == nome]
-    if len(resultado) == 1:
-        return resultado.iloc[0]["codigo_ibge"]
-    elif len(resultado) > 1:
-        st.warning("Mais de um município encontrado. Selecione um nome mais específico.")
+
+    # Filtra municípios com esse nome
+    encontrados = municipios_df.loc[municipios_df["nome_municipio_lower"] == nome]
+
+    if len(encontrados) == 1:
+        # Apenas um resultado → retorna o código
+        return encontrados.iloc[0]["codigo_ibge"], None
+
+    elif len(encontrados) > 1:
+        # Mais de um resultado → pede ao usuário para escolher
+        st.warning("Mais de um município encontrado. Selecione o correto abaixo:")
         escolha = st.selectbox(
             "Selecione o município completo:",
             [f"{row['nome_municipio']} - {row['nome_uf']} (IBGE {row['codigo_ibge']})"
-             for _, row in resultado.iterrows()]
+             for _, row in encontrados.iterrows()]
         )
+        # Extrai o código do texto selecionado
         codigo = escolha.split("IBGE ")[-1].replace(")", "")
-        return codigo, resultado
+        return codigo, encontrados
+
     else:
-        st.error("Município não encontrado.")
-        return None
+        # Nenhum resultado
+        return None, None
 
 # =======================================
 # 3️⃣ Função principal da API do Comex Stat
@@ -185,6 +193,7 @@ if consultar:
             st.dataframe(df, use_container_width=True)
             st.write("Fonte: Comexstat")
         
+
 
 
 
