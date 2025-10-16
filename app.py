@@ -12,7 +12,6 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ==============================
 @st.cache_data
 def carregar_municipios():
-    # Altere o caminho para onde está seu CSV
     municipios = pd.read_csv("municipios.csv", dtype={"codigo_ibge": str})
     return municipios
 
@@ -24,15 +23,32 @@ def obter_codigo_municipio(nome_municipio, municipios_df):
     resultado = municipios_df[
         municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)
     ]
-    if len(resultado) == 1:
-        return resultado.iloc[0]["codigo_ibge"]
-    elif len(resultado) > 1:
-        st.warning("Mais de um município encontrado. Selecione um nome mais específico.")
-        st.dataframe(resultado)
-        return None
-    else:
+
+    if len(resultado) == 0:
         st.error("Município não encontrado.")
         return None
+
+    elif len(resultado) == 1:
+        return resultado.iloc[0]["codigo_ibge"]
+
+    else:
+        st.warning("Mais de um município encontrado. Selecione abaixo o correto:")
+        resultado_exibicao = resultado[["codigo_ibge", "nome_municipio", "nome_uf"]]
+        st.dataframe(resultado_exibicao, use_container_width=True)
+
+        opcoes = resultado_exibicao.apply(
+            lambda x: f"{x['nome_municipio']} - {x['nome_uf']} ({x['codigo_ibge']})", axis=1
+        ).tolist()
+
+        selecao = st.selectbox("Selecione o município desejado:", [""] + opcoes)
+
+        if selecao != "":
+            codigo = selecao.split("(")[-1].replace(")", "")
+            st.success(f"Município selecionado: {selecao}")
+            return codigo
+        else:
+            st.info("Selecione um município para continuar.")
+            return None
 
 # =======================================
 # 3️⃣ Função principal da API do Comex Stat
@@ -40,10 +56,7 @@ def obter_codigo_municipio(nome_municipio, municipios_df):
 @st.cache_data
 def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
     url = "https://api-comexstat.mdic.gov.br/cities?language=pt"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    }
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
     def consulta_fluxo(flow):
         payload = {
@@ -74,7 +87,7 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
 # ===========================
 st.title("📊 Análise de Comércio Exterior Municipal")
 
-municipios = carregar_municipios()  # função que lê o arquivo CSV/Excel
+municipios = carregar_municipios()
 
 with st.sidebar:
     st.header("Parâmetros da consulta")
@@ -87,7 +100,7 @@ if consultar:
     codigo_municipio = obter_codigo_municipio(nome_municipio, municipios)
 
     if codigo_municipio is None:
-        st.warning("Município não encontrado. Verifique o nome e tente novamente.")
+        st.warning("Município não encontrado ou não selecionado.")
     else:
         st.info(f"Consultando dados para {nome_municipio} (código {codigo_municipio})...")
         df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
@@ -96,7 +109,7 @@ if consultar:
             st.warning("Nenhum dado retornado pela API.")
         else:
             st.success(f"✅ {len(df)} registros carregados!")
-        
+
         meses = {
             1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
             4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
@@ -106,9 +119,7 @@ if consultar:
 
         df["monthNumber"] = pd.to_numeric(df["monthNumber"], errors="coerce")
         df["Mês"] = df["monthNumber"].map(meses)
-            
 
-        # --- Limpeza e ajustes ---
         df.rename(
             columns={
                 "year": "Ano",
@@ -119,9 +130,9 @@ if consultar:
             },
             inplace=True,
         )
-        
+
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
-        df = df.sort_values(by=['Ano', 'Mês'])
+        df = df.sort_values(by=["Ano", "Mês"])
 
         with open("paises.txt", "r", encoding="utf-8") as f:
             conteudo = f.read()
@@ -130,11 +141,9 @@ if consultar:
 
         df["País"] = df["País"].replace(traducao_paises)
 
-        # --- Separar fluxos ---
         df_exp = df[df["Fluxo"] == "export"].copy()
         df_imp = df[df["Fluxo"] == "import"].copy()
 
-        # --- Mapa de Exportações ---
         st.subheader("🌍 Exportações por País")
         fig_exp = px.choropleth(
             df_exp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
@@ -145,7 +154,6 @@ if consultar:
         )
         st.plotly_chart(fig_exp, use_container_width=True)
 
-        # --- Mapa de Importações ---
         st.subheader("🌎 Importações por País")
         fig_imp = px.choropleth(
             df_imp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
@@ -156,7 +164,6 @@ if consultar:
         )
         st.plotly_chart(fig_imp, use_container_width=True)
 
-        # --- Comparativo Export x Import x Saldo ---
         st.subheader("📈 Comparativo de Fluxos e Saldo")
         df_exp["Fluxo"] = "Exportação"
         df_imp["Fluxo"] = "Importação"
@@ -175,22 +182,8 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
         st.title("📋 Dados")
         with st.expander("Mostrar Base de Dados", expanded=False):
             st.dataframe(df, use_container_width=True)
             st.write("Fonte: Comexstat")
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
