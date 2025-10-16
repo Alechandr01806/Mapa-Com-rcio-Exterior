@@ -16,23 +16,32 @@ def carregar_municipios():
     municipios = pd.read_csv("municipios.csv", dtype={"codigo_ibge": str})
     return municipios
 
-# =================================================
-# 2️⃣ Função auxiliar para buscar o código do município
-# =================================================
-def obter_codigo_municipio(nome_municipio, municipios_df):
-    nome_municipio = nome_municipio.strip().lower()
-    resultado = municipios_df[
-        municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)
-    ]
-    if len(resultado) == 1:
-        return resultado.iloc[0]["codigo_ibge"]
-    elif len(resultado) > 1:
-        st.warning("Mais de um município encontrado. Selecione um nome mais específico.")
-        st.dataframe(resultado)
-        return None
+# ================================================
+
+def obter_codigo_municipio(nome, municipios_df):
+    nome = nome.strip().lower()
+    municipios_df["nome_municipio_lower"] = municipios_df["nome_municipio"].str.lower()
+    encontrados = municipios_df.loc[municipios_df["nome_municipio_lower"] == nome]
+
+    if len(encontrados) == 1:
+        # Apenas um resultado → retorna o código
+        return encontrados.iloc[0]["codigo_ibge"], None
+
+    elif len(encontrados) > 1:
+        # Mais de um resultado → pede ao usuário para escolher
+        st.warning("Mais de um município encontrado. Selecione o correto abaixo:")
+        escolha = st.selectbox(
+            "Selecione o município completo:",
+            [f"{row['nome_municipio']} - {row['nome_uf']} (IBGE {row['codigo_ibge']})"
+             for _, row in encontrados.iterrows()]
+        )
+        # Extrai o código do texto selecionado
+        codigo = escolha.split("IBGE ")[-1].replace(")", "")
+        return codigo, encontrados
+
     else:
-        st.error("Município não encontrado.")
-        return None
+        # Nenhum resultado
+        return None, None
 
 # =======================================
 # 3️⃣ Função principal da API do Comex Stat
@@ -72,10 +81,10 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
 # ===========================
 # Interface Streamlit
 # ===========================
+
 st.title("📊 Análise de Comércio Exterior Municipal")
 
-# Carregar base de municípios (com códigos e nomes)
-municipios = carregar_municipios()  # função que lê o arquivo CSV/Excel
+municipios = carregar_municipios()
 
 with st.sidebar:
     st.header("Parâmetros da consulta")
@@ -85,12 +94,15 @@ with st.sidebar:
     consultar = st.button("🔍 Consultar dados")
 
 if consultar:
-    codigo_municipio = obter_codigo_municipio(nome_municipio, municipios)
+    codigo_municipio, lista = obter_codigo_municipio(nome_municipio, municipios)
 
     if codigo_municipio is None:
-        st.warning("Município não encontrado. Verifique o nome e tente novamente.")
+        if lista is None:
+            st.warning("Município não encontrado. Verifique o nome e tente novamente.")
     else:
-        st.info(f"Consultando dados para {nome_municipio} (código {codigo_municipio})...")
+        st.info(f"Consultando dados para {nome_municipio} (código IBGE: {codigo_municipio})...")
+
+        # Aqui entra sua função de consulta
         df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
 
         if df.empty:
@@ -165,6 +177,7 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
 
 
 
