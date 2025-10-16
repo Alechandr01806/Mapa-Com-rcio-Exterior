@@ -28,7 +28,13 @@ def obter_codigo_municipio(nome_municipio, municipios_df):
         return resultado.iloc[0]["codigo_ibge"]
     elif len(resultado) > 1:
         st.warning("Mais de um município encontrado. Selecione um nome mais específico.")
-        st.dataframe(resultado)
+        escolha = st.selectbox(
+            "Selecione o município completo:",
+            [f"{row['nome_municipio']} - {row['nome_uf']} (IBGE {row['codigo_ibge']})"
+             for _, row in encontrados.iterrows()]
+        )
+        codigo = escolha.split("IBGE ")[-1].replace(")", "")
+        return codigo, encontrados
         return None
     else:
         st.error("Município não encontrado.")
@@ -181,6 +187,7 @@ if consultar:
             st.dataframe(df, use_container_width=True)
             st.write("Fonte: Comexstat")
         
+
 
 
 
