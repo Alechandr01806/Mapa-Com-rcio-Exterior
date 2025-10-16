@@ -7,21 +7,52 @@ import ast
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# ===========================
-# Função de consulta API
-# ===========================
-def consulta_comex(ano_inicio, ano_fim, value):
+# ==============================
+# 1️⃣ Carregar base de municípios
+# ==============================
+@st.cache_data
+def carregar_municipios():
+    # Altere o caminho para onde está seu CSV
+    municipios = pd.read_csv("municipios.csv", dtype={"codigo_ibge": str})
+    return municipios
+
+# =================================================
+# 2️⃣ Função auxiliar para buscar o código do município
+# =================================================
+def obter_codigo_municipio(nome_municipio, municipios_df):
+    nome_municipio = nome_municipio.strip().lower()
+    resultado = municipios_df[
+        municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)
+    ]
+    if len(resultado) == 1:
+        return resultado.iloc[0]["codigo_ibge"]
+    elif len(resultado) > 1:
+        st.warning("Mais de um município encontrado. Selecione um nome mais específico.")
+        st.dataframe(resultado)
+        return None
+    else:
+        st.error("Município não encontrado.")
+        return None
+
+# =======================================
+# 3️⃣ Função principal da API do Comex Stat
+# =======================================
+@st.cache_data
+def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
     url = "https://api-comexstat.mdic.gov.br/cities?language=pt"
-    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
 
     def consulta_fluxo(flow):
         payload = {
             "flow": flow,
             "monthDetail": True,
             "period": {"from": f"{ano_inicio}-01", "to": f"{ano_fim}-12"},
-            "filters": [{"filter": "city", "values": [value]}],
-            "details": ["city", "country", "economicBlock", "section"],
-            "metrics": ["metricFOB"],
+            "filters": [{"filter": "city", "values": [codigo_municipio]}],
+            "details": ["city", "country", "economicBlock"],
+            "metrics": ["metricFOB"]
         }
 
         response = requests.post(url, json=payload, headers=headers, verify=False)
@@ -36,9 +67,6 @@ def consulta_comex(ano_inicio, ano_fim, value):
     df_import = consulta_fluxo("import")
     df_export = consulta_fluxo("export")
 
-    if df_import.empty and df_export.empty:
-        return pd.DataFrame()
-
     return pd.concat([df_import, df_export], ignore_index=True)
 
 # ===========================
@@ -46,22 +74,30 @@ def consulta_comex(ano_inicio, ano_fim, value):
 # ===========================
 st.title("📊 Análise de Comércio Exterior Municipal")
 
+# Carregar base de municípios (com códigos e nomes)
+municipios = carregar_municipios()  # função que lê o arquivo CSV/Excel
+
 with st.sidebar:
     st.header("Parâmetros da consulta")
+    nome_municipio = st.text_input("Digite o nome do município")
     ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
     ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2024)
-    codigo_municipio = st.text_input("Código IBGE do município", "2704302")
     consultar = st.button("🔍 Consultar dados")
 
 if consultar:
-    st.info("Consultando dados na API do ComexStat...")
+    codigo_municipio = obter_codigo_municipio(nome_municipio, municipios)
 
-    df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
-
-    if df.empty:
-        st.warning("Nenhum dado retornado pela API.")
+    if codigo_municipio is None:
+        st.warning("Município não encontrado. Verifique o nome e tente novamente.")
     else:
-        st.success(f"✅ {len(df)} registros carregados!")
+        st.info(f"Consultando dados para {nome_municipio} (código {codigo_municipio})...")
+        df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
+
+        if df.empty:
+            st.warning("Nenhum dado retornado pela API.")
+        else:
+            st.success(f"✅ {len(df)} registros carregados!")
+            st.dataframe(df)
 
         # --- Limpeza e ajustes ---
         df.rename(
@@ -129,5 +165,6 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
 
 
