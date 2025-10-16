@@ -74,28 +74,28 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
 # ===========================
 st.title("📊 Análise de Comércio Exterior Municipal")
 
-# Carregar base de municípios (com códigos e nomes)
-ufs = sorted(df_municipios["nome_uf"].unique())
+municipios = carregar_municipios()  # função que lê o arquivo CSV/Excel
 
-st.sidebar.header("Parâmetros da consulta")
-
-nome_municipio = st.text_input("Digite o nome do município", "São Paulo")
-uf_selecionada = st.selectbox("Selecione o estado (UF)", ufs)
-ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
-ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2024)
-consultar = st.button("🔍 Consultar dados")
+with st.sidebar:
+    st.header("Parâmetros da consulta")
+    nome_municipio = st.text_input("Digite o nome do município")
+    ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
+    ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2024)
+    consultar = st.button("🔍 Consultar dados")
 
 if consultar:
-    df_filtrado = df_municipios[
-        (df_municipios["nome_municipio"].str.contains(nome_municipio, case=False, na=False)) &
-        (df_municipios["nome_uf"] == uf_selecionada)
-    ]
+    codigo_municipio = obter_codigo_municipio(nome_municipio, municipios)
 
-    if df_filtrado.empty:
-        st.warning("Município não encontrado. Verifique o nome e a UF.")
+    if codigo_municipio is None:
+        st.warning("Município não encontrado. Verifique o nome e tente novamente.")
     else:
-        codigo_municipio = df_filtrado["codigo_ibge"].iloc[0]
-        st.success(f"Município encontrado: {nome_municipio} - {uf_selecionada} ({codigo_municipio})")
+        st.info(f"Consultando dados para {nome_municipio} (código {codigo_municipio})...")
+        df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
+
+        if df.empty:
+            st.warning("Nenhum dado retornado pela API.")
+        else:
+            st.success(f"✅ {len(df)} registros carregados!")
         
         meses = {
             1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
@@ -180,6 +180,7 @@ if consultar:
             st.dataframe(df, use_container_width=True)
             st.write("Fonte: Comexstat")
         
+
 
 
 
