@@ -83,7 +83,8 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
 # ===========================
 st.title("📊 Análise de Comércio Exterior Municipal")
 
-municipios = carregar_municipios()
+# Carregar base de municípios (com códigos e nomes)
+municipios = carregar_municipios()  # função que lê o arquivo CSV/Excel
 
 with st.sidebar:
     st.header("Parâmetros da consulta")
@@ -93,15 +94,12 @@ with st.sidebar:
     consultar = st.button("🔍 Consultar dados")
 
 if consultar:
-    codigo_municipio, lista = obter_codigo_municipio(nome_municipio, municipios)
+    codigo_municipio = obter_codigo_municipio(nome_municipio, municipios)
 
     if codigo_municipio is None:
-        if lista is None:
-            st.warning("Município não encontrado. Verifique o nome e tente novamente.")
+        st.warning("Município não encontrado. Verifique o nome e tente novamente.")
     else:
-        st.info(f"Consultando dados para {nome_municipio} (código IBGE: {codigo_municipio})...")
-
-        # Aqui entra sua função de consulta
+        st.info(f"Consultando dados para {nome_municipio} (código {codigo_municipio})...")
         df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
 
         if df.empty:
@@ -122,6 +120,7 @@ if consultar:
             },
             inplace=True,
         )
+        
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
 
         with open("paises.txt", "r", encoding="utf-8") as f:
@@ -176,6 +175,7 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
 
 
 
