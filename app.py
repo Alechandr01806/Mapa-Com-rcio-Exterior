@@ -20,9 +20,9 @@ def carregar_municipios():
 # 2️⃣ Acessar o código do município
 # ==================================
 def obter_codigo_municipio(nome_municipio, municipios_df):
-    nome_municipio = nome_municipio.strip().lower()
-    resultado = municipios_df[
-        municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)
+    nome_municipio = nome.strip().lower()
+    municipios_df["nome_municipio_lower"] = municipios_df["nome_municipio"].str.lower()
+    resultado = municipios_df.loc[municipios_df["nome_municipio_lower"] == nome]
     ]
     if len(resultado) == 1:
         return resultado.iloc[0]["codigo_ibge"]
@@ -31,11 +31,10 @@ def obter_codigo_municipio(nome_municipio, municipios_df):
         escolha = st.selectbox(
             "Selecione o município completo:",
             [f"{row['nome_municipio']} - {row['nome_uf']} (IBGE {row['codigo_ibge']})"
-             for _, row in encontrados.iterrows()]
+             for _, row in resultado.iterrows()]
         )
         codigo = escolha.split("IBGE ")[-1].replace(")", "")
-        return codigo, encontrados
-        return None
+        return codigo, resultado
     else:
         st.error("Município não encontrado.")
         return None
@@ -187,6 +186,7 @@ if consultar:
             st.dataframe(df, use_container_width=True)
             st.write("Fonte: Comexstat")
         
+
 
 
 
