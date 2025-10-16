@@ -19,32 +19,20 @@ def carregar_municipios():
 # ==================================
 # 2️⃣ Acessar o código do município
 # ==================================
-def obter_codigo_municipio(nome, municipios_df):
-    nome = nome.strip().lower()
-    municipios_df["nome_municipio_lower"] = municipios_df["nome_municipio"].str.lower()
-
-    # Filtra municípios com esse nome
-    encontrados = municipios_df.loc[municipios_df["nome_municipio_lower"] == nome]
-
-    if len(encontrados) == 1:
-        # Apenas um resultado → retorna o código
-        return encontrados.iloc[0]["codigo_ibge"], None
-
-    elif len(encontrados) > 1:
-        # Mais de um resultado → pede ao usuário para escolher
-        st.warning("Mais de um município encontrado. Selecione o correto abaixo:")
-        escolha = st.selectbox(
-            "Selecione o município completo:",
-            [f"{row['nome_municipio']} - {row['nome_uf']} (IBGE {row['codigo_ibge']})"
-             for _, row in encontrados.iterrows()]
-        )
-        # Extrai o código do texto selecionado
-        codigo = escolha.split("IBGE ")[-1].replace(")", "")
-        return codigo, encontrados
-
+def obter_codigo_municipio(nome_municipio, municipios_df):
+    nome_municipio = nome_municipio.strip().lower()
+    resultado = municipios_df[
+        municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)
+    ]
+    if len(resultado) == 1:
+        return resultado.iloc[0]["codigo_ibge"]
+    elif len(resultado) > 1:
+        st.warning("Mais de um município encontrado. Selecione um nome mais específico.")
+        st.dataframe(resultado)
+        return None
     else:
-        # Nenhum resultado
-        return None, None
+        st.error("Município não encontrado.")
+        return None
 
 # =======================================
 # 3️⃣ Função principal da API do Comex Stat
@@ -87,29 +75,28 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
 st.title("📊 Análise de Comércio Exterior Municipal")
 
 # Carregar base de municípios (com códigos e nomes)
-municipios = carregar_municipios()  # função que lê o arquivo CSV/Excel
+ufs = sorted(df_municipios["nome_uf"].unique())
 
-with st.sidebar:
-    st.header("Parâmetros da consulta")
-    nome_municipio = st.text_input("Digite o nome do município")
-    ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
-    ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2024)
-    consultar = st.button("🔍 Consultar dados")
+st.sidebar.header("Parâmetros da consulta")
+
+nome_municipio = st.text_input("Digite o nome do município", "São Paulo")
+uf_selecionada = st.selectbox("Selecione o estado (UF)", ufs)
+ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
+ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2024)
+consultar = st.button("🔍 Consultar dados")
 
 if consultar:
-    codigo_municipio = obter_codigo_municipio(nome_municipio, municipios)
+    df_filtrado = df_municipios[
+        (df_municipios["nome_municipio"].str.contains(nome_municipio, case=False, na=False)) &
+        (df_municipios["nome_uf"] == uf_selecionada)
+    ]
 
-    if codigo_municipio is None:
-        st.warning("Município não encontrado. Verifique o nome e tente novamente.")
+    if df_filtrado.empty:
+        st.warning("Município não encontrado. Verifique o nome e a UF.")
     else:
-        st.info(f"Consultando dados para {nome_municipio} (código {codigo_municipio})...")
-        df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
-
-        if df.empty:
-            st.warning("Nenhum dado retornado pela API.")
-        else:
-            st.success(f"✅ {len(df)} registros carregados!")
-
+        codigo_municipio = df_filtrado["codigo_ibge"].iloc[0]
+        st.success(f"Município encontrado: {nome_municipio} - {uf_selecionada} ({codigo_municipio})")
+        
         meses = {
             1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
             4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
