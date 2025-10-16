@@ -81,7 +81,6 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
 # ===========================
 # Interface Streamlit
 # ===========================
-
 st.title("📊 Análise de Comércio Exterior Municipal")
 
 municipios = carregar_municipios()
@@ -177,6 +176,7 @@ if consultar:
             labels={"value": "US$ FOB", "variable": "Indicador"},
         )
         st.plotly_chart(fig_comp, use_container_width=True)
+
 
 
 
