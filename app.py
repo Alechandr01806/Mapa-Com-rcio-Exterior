@@ -127,8 +127,14 @@ if consultar:
             10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
         }
 
-        df["monthNumber"] = pd.to_numeric(df["monthNumber"], errors="coerce")
-        df["Mês"] = df["monthNumber"].map(meses)
+        possiveis_colunas = ["monthNumber", "month", "monthCode"]
+        coluna_mes = next((c for c in possiveis_colunas if c in df.columns), None)
+        if coluna_mes:
+            df["monthNumber"] = pd.to_numeric(df[coluna_mes], errors="coerce")
+            df["Mês"] = df["monthNumber"].map(meses)
+        else:
+            st.warning("Coluna de mês não encontrada na resposta da API.")
+        
 
         # --- Limpeza e ajustes ---
         df.rename(
@@ -204,3 +210,4 @@ if consultar:
         with st.expander("Mostrar Base de Dados", expanded=False):
             st.dataframe(df, use_container_width=True)
             st.write("Fonte: Comexstat")
+
