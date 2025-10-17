@@ -47,7 +47,7 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
             "monthDetail": True,
             "period": {"from": f"{ano_inicio}-01", "to": f"{ano_fim}-12"},
             "filters": [{"filter": "city", "values": [codigo_municipio]}],
-            "details": ["city", "country"],
+            "details": ["city", "country", "economicBlock"],
             "metrics": ["metricFOB"]
         }
 
@@ -68,24 +68,30 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
 # ===========================
 # Interface Streamlit
 # ===========================
+st.set_page_config(page_title="Comércio Exterior Municipal", layout="wide")
 st.title("📊 Análise de Comércio Exterior Municipal")
 
 # --- Carregar municípios
 municipios = carregar_municipios()
 
 with st.sidebar:
-    st.header("Parâmetros da consulta")
+    st.header("⚙️ Parâmetros da consulta")
 
-    # Campo de seleção inteligente
     municipio_input = st.selectbox(
         "Selecione o município e UF",
         sorted(municipios["municipio_uf"].unique()),
         index=None,
-        placeholder="Ex: Belo Horizonte - Minas Gerais"
+        placeholder="Ex: São Paulo - SP"
     )
 
     ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
     ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2025)
+
+    periodo = st.radio(
+        "Selecione o tipo de visualização:",
+        ["Mensal", "Trimestral", "Anual"],
+        horizontal=True
+    )
 
     atualizar = st.button("🔄 Atualizar lista de municípios")
     consultar = st.button("🔍 Consultar dados")
@@ -95,6 +101,9 @@ if atualizar:
     st.cache_data.clear()
     st.success("Lista de municípios atualizada com sucesso!")
 
+# ===============================
+# 🔍 CONSULTA PRINCIPAL
+# ===============================
 if consultar:
     if not municipio_input:
         st.warning("Por favor, selecione um município e UF antes de consultar.")
@@ -130,7 +139,7 @@ if consultar:
             if not df.empty:
                 st.success(f"✅ {len(df)} registros carregados!")
 
-                # --- Conversão de mês ---
+                # --- Conversão e limpeza ---
                 meses = {
                     1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
                     4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
@@ -138,7 +147,6 @@ if consultar:
                     10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
                 }
 
-                # --- Limpeza e renomeação ---
                 df.rename(
                     columns={
                         "year": "Ano",
@@ -158,7 +166,7 @@ if consultar:
                     df["MêsNum"] = pd.to_numeric(df["MêsNum"], errors="coerce")
                     df["Mês"] = df["MêsNum"].map(meses)
 
-                # --- Criar coluna "Período" conforme seleção ---
+                # --- Criar coluna "Período" conforme visualização ---
                 if "Ano" in df.columns:
                     if periodo == "Mensal" and "MêsNum" in df.columns:
                         df["Período"] = df["Ano"].astype(str) + " - " + df["MêsNum"].astype(int).astype(str).str.zfill(2)
@@ -179,7 +187,7 @@ if consultar:
                 df_exp = df[df["Fluxo"] == "export"].copy()
                 df_imp = df[df["Fluxo"] == "import"].copy()
 
-                # 🔸 Exportações
+                # 🌍 Exportações
                 df_exp_group = df_exp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
                 st.subheader("🌍 Exportações por País")
                 fig_exp = px.choropleth(
@@ -192,7 +200,7 @@ if consultar:
                 )
                 st.plotly_chart(fig_exp, use_container_width=True)
 
-                # 🔸 Importações
+                # 🌎 Importações
                 df_imp_group = df_imp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
                 st.subheader("🌎 Importações por País")
                 fig_imp = px.choropleth(
@@ -205,7 +213,7 @@ if consultar:
                 )
                 st.plotly_chart(fig_imp, use_container_width=True)
 
-                # 🔸 Comparativo
+                # 📈 Comparativo
                 st.subheader("📈 Comparativo de Fluxos e Saldo")
                 df_exp["Fluxo"] = "Exportação"
                 df_imp["Fluxo"] = "Importação"
@@ -229,12 +237,3 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
-
-
-
-
-
-
-
-
-
