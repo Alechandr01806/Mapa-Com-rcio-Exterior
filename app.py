@@ -176,6 +176,37 @@ if consultar:
                     (df_exp["Mês"] == mes_selecionado)
                     ]
                     titulo_mapa = f"{mes_selecionado} {ano_selecionado}"
+                    fig = px.choropleth(
+                        df_filtrado,
+                        locations="País",
+                        locationmode="country names",
+                        color="Valor US$ FOB",
+                        hover_name="País",
+                        color_continuous_scale='blugrn'
+                    )
+                    fig.update_layout(
+                        title=None,
+                        geo=dict(
+                            showframe=False,
+                            showcoastlines=True,
+                            projection_type='equirectangular',
+                            bgcolor='#F4F4F0',
+                            landcolor='rgba(206,206,206,1)',
+                            showcountries=True
+                        ),
+                        coloraxis_colorbar=dict(
+                            title='',
+                            thickness=15,
+                            len=0.75,
+                            x=0.95,
+                            y=0.5
+                        ),
+                        width=900,
+                        height=500,
+                        margin={"r":0,"t":0,"l":0,"b":0}
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                   
                 else:
                     trimestres = df_exp[df_exp["Ano"] == ano_selecionado]["Trimestre"].unique()
                     trimestre_selecionado = st.selectbox("Selecione o Trimestre:", trimestres, index=len(trimestres) - 1)
@@ -185,38 +216,36 @@ if consultar:
                     ]
                     df_filtrado = df_filtrado.groupby("País", as_index=False)["Valor"].sum()
                     titulo_mapa = f"{trimestre_selecionado} {ano_selecionado}"
-
-                fig = px.choropleth(
-                    df_filtrado,
-                    locations="País",
-                    locationmode="country names",
-                    color="Valor US$ FOB",
-                    hover_name="País",
-                    color_continuous_scale='blugrn'
-                )
-                fig.update_layout(
-                    title=None,
-                    geo=dict(
-                        showframe=False,
-                        showcoastlines=True,
-                        projection_type='equirectangular',
-                        bgcolor='#F4F4F0',
-                        landcolor='rgba(206,206,206,1)',
-                        showcountries=True
-                    ),
-                    coloraxis_colorbar=dict(
-                        title='',
-                        thickness=15,
-                        len=0.75,
-                        x=0.95,
-                        y=0.5
-                    ),
-                    width=900,
-                    height=500,
-                    margin={"r":0,"t":0,"l":0,"b":0}
-                )
-
-                st.plotly_chart(fig, use_container_width=True)
+                                        fig = px.choropleth(
+                        df_filtrado,
+                        locations="País",
+                        locationmode="country names",
+                        color="Valor US$ FOB",
+                        hover_name="País",
+                        color_continuous_scale='blugrn'
+                    )
+                    fig.update_layout(
+                        title=None,
+                        geo=dict(
+                            showframe=False,
+                            showcoastlines=True,
+                            projection_type='equirectangular',
+                            bgcolor='#F4F4F0',
+                            landcolor='rgba(206,206,206,1)',
+                            showcountries=True
+                        ),
+                        coloraxis_colorbar=dict(
+                            title='',
+                            thickness=15,
+                            len=0.75,
+                            x=0.95,
+                            y=0.5
+                        ),
+                        width=900,
+                        height=500,
+                        margin={"r":0,"t":0,"l":0,"b":0}
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
 
                 st.subheader("🌎 Importações por País")
                 fig_imp = px.choropleth(
@@ -251,6 +280,7 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
