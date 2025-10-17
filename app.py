@@ -120,10 +120,10 @@ if df.empty:
             else:
                 df = pd.read_excel(arquivo_usuario)
                 st.success(f"✅ {len(df)} registros carregados a partir do arquivo!")
-                except Exception as e:
-                    st.error(f"Erro ao ler o arquivo: {e}")
-            else:
-                st.stop()                            
+        except Exception as e:
+            st.error(f"Erro ao ler o arquivo: {e}")
+    else:
+        st.stop()                                           
 else:
     st.success(f"✅ {len(df)} registros carregados da API!")
             else:
@@ -212,5 +212,6 @@ else:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
