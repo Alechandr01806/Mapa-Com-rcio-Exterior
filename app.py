@@ -106,24 +106,24 @@ if consultar:
             st.info(f"Consultando dados para **{municipio_input}** (código {codigo_municipio})...")
             df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
 
-            if df.empty:
-                st.warning("Nenhum dado retornado pela API. Você pode carregar um arquivo manualmente abaixo 👇")
-            arquivo_usuario = st.file_uploader(
-                "Envie um arquivo CSV ou Excel com os dados de comércio exterior",
-                type=["csv", "xlsx", "xls"],
-                help="O arquivo deve conter colunas como 'Ano', 'País', 'Fluxo' e 'Valor US$ FOB'."
-            )
-            if arquivo_usuario is not None:
-                 try:
-                     if arquivo_usuario.name.endswith(".csv"):
-                         df = pd.read_csv(arquivo_usuario)
-                    else:
-                        df = pd.read_excel(arquivo_usuario)
-                        st.success(f"✅ {len(df)} registros carregados a partir do arquivo!")
-                    except Exception as e:
-                        st.error(f"Erro ao ler o arquivo: {e}")
+if df.empty:
+    st.warning("Nenhum dado retornado pela API. Você pode carregar um arquivo manualmente abaixo 👇")
+    arquivo_usuario = st.file_uploader(
+        "Envie um arquivo CSV ou Excel com os dados de comércio exterior",
+        type=["csv", "xlsx", "xls"],
+        help="O arquivo deve conter colunas como 'Ano', 'País', 'Fluxo' e 'Valor US$ FOB'."
+    )
+    if arquivo_usuario is not None:
+        try:
+            if arquivo_usuario.name.endswith(".csv"):
+                df = pd.read_csv(arquivo_usuario)
             else:
-                st.stop()  # Interrompe execução até que o arquivo seja enviado            
+                df = pd.read_excel(arquivo_usuario)
+                st.success(f"✅ {len(df)} registros carregados a partir do arquivo!")
+                except Exception as e:
+                    st.error(f"Erro ao ler o arquivo: {e}")
+            else:
+                st.stop()                            
 else:
     st.success(f"✅ {len(df)} registros carregados da API!")
             else:
@@ -212,4 +212,5 @@ else:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
