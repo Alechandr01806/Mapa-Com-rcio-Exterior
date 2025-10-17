@@ -15,14 +15,13 @@ def carregar_municipios():
     municipios = pd.read_csv("municipios.csv", dtype={"codigo_ibge": str})
     return municipios
 
+
 # ==================================
 # 2️⃣ Acessar o código do município
 # ==================================
 def obter_codigo_municipio(nome_municipio, municipios_df):
     nome_municipio = nome_municipio.strip().lower()
-    resultado = municipios_df[
-        municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)
-    ]
+    resultado = municipios_df[municipios_df["nome_municipio"].str.lower().str.contains(nome_municipio)]
 
     if len(resultado) == 0:
         st.error("Município não encontrado.")
@@ -34,21 +33,27 @@ def obter_codigo_municipio(nome_municipio, municipios_df):
     else:
         st.warning("Mais de um município encontrado. Selecione abaixo o correto:")
         resultado_exibicao = resultado[["codigo_ibge", "nome_municipio", "nome_uf"]]
-        st.dataframe(resultado_exibicao, use_container_width=True)
 
         opcoes = resultado_exibicao.apply(
             lambda x: f"{x['nome_municipio']} - {x['nome_uf']} ({x['codigo_ibge']})", axis=1
         ).tolist()
 
-        selecao = st.selectbox("Selecione o município desejado:", [""] + opcoes)
+        # Usa session_state para manter a escolha
+        selecao = st.selectbox(
+            "Selecione o município desejado:",
+            [""] + opcoes,
+            key="municipio_selecionado"
+        )
 
         if selecao != "":
             codigo = selecao.split("(")[-1].replace(")", "")
+            st.session_state["codigo_municipio"] = codigo  # salva no estado
             st.success(f"Município selecionado: {selecao}")
             return codigo
         else:
             st.info("Selecione um município para continuar.")
             return None
+
 
 # =======================================
 # 3️⃣ Função principal da API do Comex Stat
@@ -79,8 +84,8 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
 
     df_import = consulta_fluxo("import")
     df_export = consulta_fluxo("export")
-
     return pd.concat([df_import, df_export], ignore_index=True)
+
 
 # ===========================
 # Interface Streamlit
@@ -93,15 +98,17 @@ with st.sidebar:
     st.header("Parâmetros da consulta")
     nome_municipio = st.text_input("Digite o nome do município")
     ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
-    ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2024)
+    ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2025)
     consultar = st.button("🔍 Consultar dados")
 
 if consultar:
     codigo_municipio = obter_codigo_municipio(nome_municipio, municipios)
 
-    if codigo_municipio is None:
-        st.warning("Município não encontrado ou não selecionado.")
-    else:
+    # Se o usuário já escolheu via selectbox, reutiliza
+    if "codigo_municipio" in st.session_state and codigo_municipio is None:
+        codigo_municipio = st.session_state["codigo_municipio"]
+
+    if codigo_municipio:
         st.info(f"Consultando dados para {nome_municipio} (código {codigo_municipio})...")
         df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
 
@@ -110,80 +117,86 @@ if consultar:
         else:
             st.success(f"✅ {len(df)} registros carregados!")
 
-        meses = {
-            1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
-            4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
-            7: "07. Julho", 8: "08. Agosto", 9: "09. Setembro",
-            10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
-        }
+            # --- Conversão de mês ---
+            meses = {
+                1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
+                4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
+                7: "07. Julho", 8: "08. Agosto", 9: "09. Setembro",
+                10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
+            }
 
-        df["monthNumber"] = pd.to_numeric(df["monthNumber"], errors="coerce")
-        df["Mês"] = df["monthNumber"].map(meses)
+            if "monthNumber" in df.columns:
+                df["monthNumber"] = pd.to_numeric(df["monthNumber"], errors="coerce")
+                df["Mês"] = df["monthNumber"].map(meses)
 
-        df.rename(
-            columns={
-                "year": "Ano",
-                "country": "País",
-                "section": "Descrição Seção",
-                "metricFOB": "Valor US$ FOB",
-                "flow": "Fluxo",
-            },
-            inplace=True,
-        )
+            # --- Limpeza e renomeação ---
+            df.rename(
+                columns={
+                    "year": "Ano",
+                    "country": "País",
+                    "section": "Descrição Seção",
+                    "metricFOB": "Valor US$ FOB",
+                    "flow": "Fluxo",
+                },
+                inplace=True,
+            )
 
-        df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
-        df = df.sort_values(by=["Ano", "Mês"])
+            if "Valor US$ FOB" in df.columns:
+                df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
 
-        with open("paises.txt", "r", encoding="utf-8") as f:
-            conteudo = f.read()
-        conteudo = "{" + conteudo.strip().strip(",") + "}"
-        traducao_paises = ast.literal_eval(conteudo)
+            df = df.sort_values(by=["Ano", "Mês"], ascending=True)
 
-        df["País"] = df["País"].replace(traducao_paises)
+            # --- Tradução de países ---
+            with open("paises.txt", "r", encoding="utf-8") as f:
+                conteudo = f.read()
+            conteudo = "{" + conteudo.strip().strip(",") + "}"
+            traducao_paises = ast.literal_eval(conteudo)
+            df["País"] = df["País"].replace(traducao_paises)
 
-        df_exp = df[df["Fluxo"] == "export"].copy()
-        df_imp = df[df["Fluxo"] == "import"].copy()
+            # --- Gráficos ---
+            df_exp = df[df["Fluxo"] == "export"].copy()
+            df_imp = df[df["Fluxo"] == "import"].copy()
 
-        st.subheader("🌍 Exportações por País")
-        fig_exp = px.choropleth(
-            df_exp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
-            locations="País",
-            locationmode="country names",
-            color="Valor US$ FOB",
-            color_continuous_scale="blugrn",
-        )
-        st.plotly_chart(fig_exp, use_container_width=True)
+            st.subheader("🌍 Exportações por País")
+            fig_exp = px.choropleth(
+                df_exp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
+                locations="País",
+                locationmode="country names",
+                color="Valor US$ FOB",
+                color_continuous_scale="blugrn",
+            )
+            st.plotly_chart(fig_exp, use_container_width=True)
 
-        st.subheader("🌎 Importações por País")
-        fig_imp = px.choropleth(
-            df_imp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
-            locations="País",
-            locationmode="country names",
-            color="Valor US$ FOB",
-            color_continuous_scale="reds",
-        )
-        st.plotly_chart(fig_imp, use_container_width=True)
+            st.subheader("🌎 Importações por País")
+            fig_imp = px.choropleth(
+                df_imp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
+                locations="País",
+                locationmode="country names",
+                color="Valor US$ FOB",
+                color_continuous_scale="reds",
+            )
+            st.plotly_chart(fig_imp, use_container_width=True)
 
-        st.subheader("📈 Comparativo de Fluxos e Saldo")
-        df_exp["Fluxo"] = "Exportação"
-        df_imp["Fluxo"] = "Importação"
-        df_comex = pd.concat([df_exp, df_imp], ignore_index=True)
+            st.subheader("📈 Comparativo de Fluxos e Saldo")
+            df_exp["Fluxo"] = "Exportação"
+            df_imp["Fluxo"] = "Importação"
+            df_comex = pd.concat([df_exp, df_imp], ignore_index=True)
+            df_comp = df_comex.groupby(["Ano", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
+            df_pivot = df_comp.pivot_table(index="Ano", columns="Fluxo", values="Valor US$ FOB", fill_value=0)
+            df_pivot["Saldo Comercial"] = df_pivot["Exportação"] - df_pivot["Importação"]
+            df_pivot = df_pivot.reset_index()
 
-        df_comp = df_comex.groupby(["Ano", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
-        df_pivot = df_comp.pivot_table(index="Ano", columns="Fluxo", values="Valor US$ FOB", fill_value=0)
-        df_pivot["Saldo Comercial"] = df_pivot["Exportação"] - df_pivot["Importação"]
-        df_pivot = df_pivot.reset_index()
+            fig_comp = px.line(
+                df_pivot,
+                x="Ano",
+                y=["Exportação", "Importação", "Saldo Comercial"],
+                markers=True,
+                labels={"value": "US$ FOB", "variable": "Indicador"},
+            )
+            st.plotly_chart(fig_comp, use_container_width=True)
 
-        fig_comp = px.line(
-            df_pivot,
-            x="Ano",
-            y=["Exportação", "Importação", "Saldo Comercial"],
-            markers=True,
-            labels={"value": "US$ FOB", "variable": "Indicador"},
-        )
-        st.plotly_chart(fig_comp, use_container_width=True)
-
-        st.title("📋 Dados")
-        with st.expander("Mostrar Base de Dados", expanded=False):
-            st.dataframe(df, use_container_width=True)
-            st.write("Fonte: Comexstat")
+            # --- Base completa ---
+            st.title("📋 Dados")
+            with st.expander("Mostrar Base de Dados", expanded=False):
+                st.dataframe(df, use_container_width=True)
+                st.write("Fonte: Comexstat")
