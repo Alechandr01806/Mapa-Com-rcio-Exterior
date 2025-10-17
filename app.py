@@ -123,6 +123,17 @@ if consultar:
                     df["monthNumber"] = pd.to_numeric(df["monthNumber"], errors="coerce")
                     df["Mês"] = df["monthNumber"].map(meses)
 
+                #---Comversão de trimestre---
+                trimestres_map = {
+                     "01. Janeiro": "Q1", "02. Fevereiro": "Q1", "03. Março": "Q1",
+                    "04. Abril": "Q2", "05. Maio": "Q2", "06. Junho": "Q2",
+                    "07. Julho": "Q3", "08. Agosto": "Q3", "09. Setembro": "Q3",
+                    "10. Outubro": "Q4", "11. Novembro": "Q4", "12. Dezembro": "Q4"
+                }
+                df["Trimestre"] = df["Mês"].map(trimestres_map)
+
+                
+
                 # --- Limpeza e renomeação ---
                 df.rename(
                     columns={
@@ -151,15 +162,61 @@ if consultar:
                 df_exp = df[df["Fluxo"] == "export"].copy()
                 df_imp = df[df["Fluxo"] == "import"].copy()
 
-                st.subheader("🌍 Exportações por País")
-                fig_exp = px.choropleth(
-                    df_exp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
+                anos = df_exp["Ano"].sort_values().unique()
+                ano_selecionado = st.selectbox("Selecione o Ano(Exportações):", anos, index=len(anos) - 1)
+
+                st.subheader("🌎 Exportações por País")
+
+                tipo_vis = st.radio("Visualizar por(Exportações):", ["Mensal", "Trimestral"])
+                if tipo_vis == "Mensal":
+                    meses = df_exp[df_exp["Ano"] == ano_selecionado]["Mês"].unique()
+                    mes_selecionado = st.selectbox("Selecione o Mês:", meses, index=len(meses) - 1)
+                    df_filtrado = df_exp[
+                    (df_exp["Ano"] == ano_selecionado) &
+                    (df_exp["Mês"] == mes_selecionado)
+                    ]
+                    titulo_mapa = f"{mes_selecionado} {ano_selecionado}"
+                else:
+                    trimestres = df_exp[df_exp["Ano"] == ano_selecionado]["Trimestre"].unique()
+                    trimestre_selecionado = st.selectbox("Selecione o Trimestre:", trimestres, index=len(trimestres) - 1)
+                    df_filtrado = df_exp[
+                    (df_exp["Ano"] == ano_selecionado) &
+                    (df_exp["Trimestre"] == trimestre_selecionado)
+                    ]
+                    df_filtrado = df_filtrado.groupby("País", as_index=False)["Valor"].sum()
+                    titulo_mapa = f"{trimestre_selecionado} {ano_selecionado}"
+
+                fig = px.choropleth(
+                    df_filtrado,
                     locations="País",
                     locationmode="country names",
                     color="Valor US$ FOB",
-                    color_continuous_scale="blugrn",
+                    hover_name="País",
+                    color_continuous_scale='blugrn'
                 )
-                st.plotly_chart(fig_exp, use_container_width=True)
+                fig.update_layout(
+                    title=None,
+                    geo=dict(
+                        showframe=False,
+                        showcoastlines=True,
+                        projection_type='equirectangular',
+                        bgcolor='#F4F4F0',
+                        landcolor='rgba(206,206,206,1)',
+                        showcountries=True
+                    ),
+                    coloraxis_colorbar=dict(
+                        title='',
+                        thickness=15,
+                        len=0.75,
+                        x=0.95,
+                        y=0.5
+                    ),
+                    width=900,
+                    height=500,
+                    margin={"r":0,"t":0,"l":0,"b":0}
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
 
                 st.subheader("🌎 Importações por País")
                 fig_imp = px.choropleth(
@@ -194,4 +251,5 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
