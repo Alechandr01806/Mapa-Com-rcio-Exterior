@@ -216,7 +216,7 @@ if consultar:
                     ]
                     df_filtrado = df_filtrado.groupby("País", as_index=False)["Valor"].sum()
                     titulo_mapa = f"{trimestre_selecionado} {ano_selecionado}"
-                                        fig = px.choropleth(
+                    fig = px.choropleth(
                         df_filtrado,
                         locations="País",
                         locationmode="country names",
@@ -246,7 +246,6 @@ if consultar:
                         margin={"r":0,"t":0,"l":0,"b":0}
                     )
                     st.plotly_chart(fig, use_container_width=True)
-
                 st.subheader("🌎 Importações por País")
                 fig_imp = px.choropleth(
                     df_imp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
@@ -280,6 +279,7 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
