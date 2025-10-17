@@ -81,7 +81,7 @@ with st.sidebar:
         "Selecione o município e UF",
         sorted(municipios["municipio_uf"].unique()),
         index=None,
-        placeholder="Ex: São Paulo - SP"
+        placeholder="Ex: Belo Horizonte - Minas Gerais"
     )
 
     ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
@@ -95,7 +95,6 @@ if atualizar:
     st.cache_data.clear()
     st.success("Lista de municípios atualizada com sucesso!")
 
-# Consulta
 if consultar:
     if not municipio_input:
         st.warning("Por favor, selecione um município e UF antes de consultar.")
@@ -167,53 +166,123 @@ if consultar:
                 traducao_paises = ast.literal_eval(conteudo)
                 df["País"] = df["País"].replace(traducao_paises)
 
-                # --- Gráficos ---
+                # --- Separar fluxos ---
                 df_exp = df[df["Fluxo"] == "export"].copy()
                 df_imp = df[df["Fluxo"] == "import"].copy()
 
-                st.subheader("🌍 Exportações por País")
+                # =======================================================
+                # ⏱️ Escolher período de visualização (Mensal, Trimestral, Anual)
+                # =======================================================
+                st.markdown("## ⏱️ Análise Temporal")
+                periodo = st.radio(
+                    "Selecione o período de visualização:",
+                    ["Mensal", "Trimestral", "Anual"],
+                    horizontal=True,
+                )
+
+                # Criar colunas auxiliares
+                if "monthNumber" in df.columns:
+                    df["monthNumber"] = pd.to_numeric(df["monthNumber"], errors="coerce")
+                    df["Ano"] = pd.to_numeric(df["Ano"], errors="coerce")
+                    df["Trimestre"] = ((df["monthNumber"] - 1) // 3 + 1).astype(int)
+                    df["Período_Trimestre"] = df["Ano"].astype(str) + "-T" + df["Trimestre"].astype(str)
+                    df["Período_Mês"] = df["Ano"].astype(str) + "-" + df["Mês"].astype(str)
+                else:
+                    df["Período_Trimestre"] = df["Ano"].astype(str)
+                    df["Período_Mês"] = df["Ano"].astype(str)
+
+                # =======================================================
+                # 🌍 Exportações por País
+                # =======================================================
+                st.markdown("### 🌍 Exportações por País")
+
+                if periodo == "Mensal":
+                    df_exp_group = df_exp.groupby(["Ano", "Mês", "País"], as_index=False)["Valor US$ FOB"].sum()
+                    animation_col = "Mês"
+                elif periodo == "Trimestral":
+                    df_exp_group = df_exp.groupby(["Período_Trimestre", "País"], as_index=False)["Valor US$ FOB"].sum()
+                    animation_col = "Período_Trimestre"
+                else:
+                    df_exp_group = df_exp.groupby(["Ano", "País"], as_index=False)["Valor US$ FOB"].sum()
+                    animation_col = "Ano"
+
                 fig_exp = px.choropleth(
-                    df_exp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
+                    df_exp_group,
                     locations="País",
                     locationmode="country names",
                     color="Valor US$ FOB",
-                    color_continuous_scale="blugrn",
+                    color_continuous_scale="Blues",
+                    animation_frame=animation_col,
+                    title=f"Exportações por País ({periodo})",
                 )
                 st.plotly_chart(fig_exp, use_container_width=True)
 
-                st.subheader("🌎 Importações por País")
+                # =======================================================
+                # 🌎 Importações por País
+                # =======================================================
+                st.markdown("### 🌎 Importações por País")
+
+                if periodo == "Mensal":
+                    df_imp_group = df_imp.groupby(["Ano", "Mês", "País"], as_index=False)["Valor US$ FOB"].sum()
+                    animation_col = "Mês"
+                elif periodo == "Trimestral":
+                    df_imp_group = df_imp.groupby(["Período_Trimestre", "País"], as_index=False)["Valor US$ FOB"].sum()
+                    animation_col = "Período_Trimestre"
+                else:
+                    df_imp_group = df_imp.groupby(["Ano", "País"], as_index=False)["Valor US$ FOB"].sum()
+                    animation_col = "Ano"
+
                 fig_imp = px.choropleth(
-                    df_imp.groupby("País", as_index=False)["Valor US$ FOB"].sum(),
+                    df_imp_group,
                     locations="País",
                     locationmode="country names",
                     color="Valor US$ FOB",
-                    color_continuous_scale="reds",
+                    color_continuous_scale="Reds",
+                    animation_frame=animation_col,
+                    title=f"Importações por País ({periodo})",
                 )
                 st.plotly_chart(fig_imp, use_container_width=True)
 
-                st.subheader("📈 Comparativo de Fluxos e Saldo")
-                df_exp["Fluxo"] = "Exportação"
-                df_imp["Fluxo"] = "Importação"
-                df_comex = pd.concat([df_exp, df_imp], ignore_index=True)
-                df_comp = df_comex.groupby(["Ano", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
-                df_pivot = df_comp.pivot_table(index="Ano", columns="Fluxo", values="Valor US$ FOB", fill_value=0)
-                df_pivot["Saldo Comercial"] = df_pivot["Exportação"] - df_pivot["Importação"]
+                # =======================================================
+                # 📈 Comparativo Exportação / Importação / Saldo
+                # =======================================================
+                st.markdown("### 📈 Comparativo de Fluxos e Saldo Comercial")
+
+                if periodo == "Mensal":
+                    df_comp = df.groupby(["Ano", "Mês", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
+                    df_comp["Período"] = df_comp["Ano"].astype(str) + "-" + df_comp["Mês"].astype(str)
+                elif periodo == "Trimestral":
+                    df_comp = df.groupby(["Período_Trimestre", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
+                    df_comp.rename(columns={"Período_Trimestre": "Período"}, inplace=True)
+                else:
+                    df_comp = df.groupby(["Ano", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
+                    df_comp.rename(columns={"Ano": "Período"}, inplace=True)
+
+                df_pivot = df_comp.pivot_table(index="Período", columns="Fluxo", values="Valor US$ FOB", fill_value=0)
+                df_pivot["Saldo Comercial"] = df_pivot.get("export", 0) - df_pivot.get("import", 0)
+                df_pivot.rename(columns={"export": "Exportação", "import": "Importação"}, inplace=True)
                 df_pivot = df_pivot.reset_index()
 
                 fig_comp = px.line(
                     df_pivot,
-                    x="Ano",
+                    x="Período",
                     y=["Exportação", "Importação", "Saldo Comercial"],
                     markers=True,
                     labels={"value": "US$ FOB", "variable": "Indicador"},
+                    title=f"Evolução do Comércio Exterior ({periodo})",
                 )
+                fig_comp.update_layout(legend_title_text="Indicador", hovermode="x unified")
                 st.plotly_chart(fig_comp, use_container_width=True)
 
-                # --- Base completa ---
-                st.title("📋 Dados")
+                # =======================================================
+                # 📋 Dados
+                # =======================================================
+                st.title("📋 Base de Dados")
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
+
 
 
 
