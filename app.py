@@ -47,7 +47,7 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
             "monthDetail": True,
             "period": {"from": f"{ano_inicio}-01", "to": f"{ano_fim}-12"},
             "filters": [{"filter": "city", "values": [codigo_municipio]}],
-            "details": ["city", "country", "economicBlock"],
+            "details": ["city", "country"],
             "metrics": ["metricFOB"]
         }
 
@@ -214,6 +214,7 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
