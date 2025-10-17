@@ -147,17 +147,9 @@ if consultar:
                     10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
                 }
 
-                df.rename(
-                    columns={
-                        "year": "Ano",
-                        "country": "País",
-                        "section": "Descrição Seção",
-                        "metricFOB": "Valor US$ FOB",
-                        "flow": "Fluxo",
-                        "monthNumber": "MêsNum"
-                    },
-                    inplace=True,
-                )
+                colunas_api = {"year": "Ano", "country": "País", "section": "Descrição Seção", "metricFOB": "Valor US$ FOB", "flow": "Fluxo"}
+                if any(col in df.columns for col in colunas_api.keys()):
+                    df.rename(columns=colunas_api, inplace=True)
 
                 if "Valor US$ FOB" in df.columns:
                     df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
@@ -237,3 +229,4 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
