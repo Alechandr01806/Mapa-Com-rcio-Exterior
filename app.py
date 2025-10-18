@@ -231,28 +231,16 @@ if not df.empty:
         df_exp["Fluxo"] = "Exportação"
         df_imp["Fluxo"] = "Importação"
         df_comex = pd.concat([df_exp, df_imp], ignore_index=True)
-        df_comp = df_comex.groupby(["Período", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
         df_pivot = df_comp.pivot_table(index="Período", columns="Fluxo", values="Valor US$ FOB", fill_value=0)
-        df_pivot = df_pivot.rename(columns={
-            "export": "Exportação",
-            "import": "Importação",
-            "Export": "Exportação",
-            "Import": "Importação"
-        })
-        df_pivot["Saldo Comercial"] = df_pivot.get("Exportação", 0) - df_pivot.get("Importação", 0)
+        df_pivot["Saldo Comercial"] = df_pivot["Exportação"] - df_pivot["Importação"]
         df_pivot = df_pivot.reset_index()
-        df_long = df_pivot.melt(id_vars="Período", value_vars=["Exportação", "Importação", "Saldo Comercial"],
-                        var_name="Indicador", value_name="US$ FOB")
-        df_long = df_long.dropna(subset=["US$ FOB"])
         fig_comp = px.line(
-            df_long,
+            df_pivot,
             x="Período",
-            y="US$ FOB",
-            color="Indicador",
+            y=["Exportação", "Importação", "Saldo Comercial"],
             markers=True,
-            labels={"Período": "Período", "US$ FOB": "Valor (US$ FOB)", "Indicador": "Fluxo"}
+            labels={"value": "US$ FOB", "variable": "Indicador"},
         )
-        fig_comp.update_traces(line=dict(width=2))
         st.plotly_chart(fig_comp, use_container_width=True)
 
     # 🏆 RANKINGS
@@ -293,6 +281,7 @@ if not df.empty:
     df_sorted = df.sort_values(by=['Ano', 'Mês'])
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df_sorted, use_container_width=True)
+
 
 
 
