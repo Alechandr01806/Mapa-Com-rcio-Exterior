@@ -241,13 +241,18 @@ if not df.empty:
         })
         df_pivot["Saldo Comercial"] = df_pivot.get("Exportação", 0) - df_pivot.get("Importação", 0)
         df_pivot = df_pivot.reset_index()
+        df_long = df_pivot.melt(id_vars="Período", value_vars=["Exportação", "Importação", "Saldo Comercial"],
+                        var_name="Indicador", value_name="US$ FOB")
+        df_long = df_long.dropna(subset=["US$ FOB"])
         fig_comp = px.line(
-            df_pivot,
+            df_long,
             x="Período",
-            y=["Exportação", "Importação", "Saldo Comercial"],
+            y="US$ FOB",
+            color="Indicador",
             markers=True,
-            labels={"value": "US$ FOB", "variable": "Indicador"},
+            labels={"Período": "Período", "US$ FOB": "Valor (US$ FOB)", "Indicador": "Fluxo"}
         )
+        fig_comp.update_traces(line=dict(width=2))
         st.plotly_chart(fig_comp, use_container_width=True)
 
     # 🏆 RANKINGS
@@ -288,6 +293,7 @@ if not df.empty:
     df_sorted = df.sort_values(by=['Ano', 'Mês'])
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df_sorted, use_container_width=True)
+
 
 
 
