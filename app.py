@@ -13,7 +13,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 @st.cache_data
 def carregar_municipios():
     try:
-        municipios = pd.read_csv("UF_MUN.csv", dtype={"CO_MUN_GEO": str})
+        municipios = pd.read_csv("UF_MUN.csv", encoding='latin-1', sep=";")
         if not all(col in municipios.columns for col in ["CO_MUN_GEO", "NO_MUN_MIN", "SG_UF"]):
             st.error("⚠️ O arquivo 'UF_MUN.csv' precisa conter as colunas: CO_MUN_GEO, NO_MUN_MIN e SG_UF.")
             st.stop()
@@ -234,3 +234,4 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
