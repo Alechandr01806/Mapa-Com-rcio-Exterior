@@ -168,9 +168,9 @@ if not df.empty:
 
     if "MêsNum" in df.columns:
         meses = {
-            1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
-            4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
-            7: "07. Julho", 8: "08. Agosto", 9: "09. Setembro",
+            01: "01. Janeiro", 02: "02. Fevereiro", 03: "03. Março",
+            04: "04. Abril", 05: "05. Maio", 06: "06. Junho",
+            07: "07. Julho", 08: "08. Agosto", 09: "09. Setembro",
             10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
         }
         df["Mês"] = df["MêsNum"].map(meses)
@@ -293,6 +293,7 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
 
 
 
