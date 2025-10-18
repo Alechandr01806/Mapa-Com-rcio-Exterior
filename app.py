@@ -220,6 +220,17 @@ if consultar:
                         color="Valor US$ FOB",
                         color_continuous_scale="reds",
                         animation_frame="Período")
+                    
+                    if len(df_exp_group["Período"].unique()) > 0:
+                        ultimo_periodo = sorted(df_exp_group["Período"].unique())[-1]
+                        try:
+                            frame_index = list(fig_exp.frames).index(
+                                next(f for f in fig_exp.frames if f.name == ultimo_periodo)
+                            )
+                            fig_exp.layout["sliders"][0]["active"] = frame_index
+                            fig_exp.layout["updatemenus"][0]["buttons"][0]["args"][1]["frame"]["duration"] = 0
+                        except Exception:
+                            pass
                     st.plotly_chart(fig_imp, use_container_width=True)
                     
                 # 📈 COMPARATIVO
@@ -287,10 +298,12 @@ if consultar:
                         st.plotly_chart(fig_imp_top, use_container_width=True)
                     
                 # --- Base completa ---
+                df_sorted = df.sort_values(by=['Ano', 'Mês'])
                 st.title("📋 Dados")
                 with st.expander("Mostrar Base de Dados", expanded=False):
-                    st.dataframe(df, use_container_width=True)
+                    st.dataframe(df_sorted, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
