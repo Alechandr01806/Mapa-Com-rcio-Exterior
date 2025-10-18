@@ -92,6 +92,20 @@ with st.sidebar:
         ["Mensal", "Trimestral", "Anual"],
         horizontal=True
     )
+    periodo_especifico = None
+    if periodo == "Mensal":
+        mes_opcoes = [
+            "01. Janeiro", "02. Fevereiro", "03. Março", "04. Abril", "05. Maio", "06. Junho",
+            "07. Julho", "08. Agosto", "09. Setembro", "10. Outubro", "11. Novembro", "12. Dezembro"
+        ]
+        periodo_especifico = st.selectbox("Selecione o mês específico", mes_opcoes, index=None, placeholder="Escolha um mês")
+    elif periodo == "Trimestral":
+        trimestre_opcoes = ["1º Trimestre", "2º Trimestre", "3º Trimestre", "4º Trimestre"]
+        periodo_especifico = st.selectbox("Selecione o trimestre específico", trimestre_opcoes, index=None, placeholder="Escolha um trimestre")
+    elif periodo == "Anual":
+        anos_disponiveis = list(range(ano_inicio, ano_fim + 1))
+        periodo_especifico = st.selectbox("Selecione o ano específico", anos_disponiveis, index=None, placeholder="Escolha um ano")
+        
     atualizar = st.button("🔄 Atualizar lista de municípios")
     consultar = st.button("🔍 Consultar dados")
 
@@ -181,6 +195,15 @@ if consultar:
                 df["País"] = df["País"].replace(traducao_paises)
                 traducao_invertida = {v: k for k, v in traducao_paises.items()}
 
+                if periodo_especifico:
+                    if periodo == "Mensal" and "Mês" in df.columns:
+                        df = df[df["Mês"] == periodo_especifico]
+                    elif periodo == "Trimestral" and "Trimestre" in df.columns:
+                        trimestre_num = int(periodo_especifico[0])
+                        df = df[df["Trimestre"] == trimestre_num]
+                    elif periodo == "Anual" and "Ano" in df.columns:
+                        df = df[df["Ano"] == periodo_especifico]
+
                 # --- Gráficos ---
                 df_exp = df[df["Fluxo"] == "export"].copy()
                 df_imp = df[df["Fluxo"] == "import"].copy()
@@ -235,6 +258,7 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
