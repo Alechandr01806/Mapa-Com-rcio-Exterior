@@ -221,14 +221,14 @@ if consultar:
                         color_continuous_scale="reds",
                         animation_frame="Período")
                     
-                    if len(df_exp_group["Período"].unique()) > 0:
-                        ultimo_periodo = sorted(df_exp_group["Período"].unique())[-1]
+                    if len(df_imp_group["Período"].unique()) > 0:
+                        ultimo_periodo = sorted(df_imp_group["Período"].unique())[-1]
                         try:
-                            frame_index = list(fig_exp.frames).index(
-                                next(f for f in fig_exp.frames if f.name == ultimo_periodo)
+                            frame_index = list(fig_imp.frames).index(
+                                next(f for f in fig_imp.frames if f.name == ultimo_periodo)
                             )
-                            fig_exp.layout["sliders"][0]["active"] = frame_index
-                            fig_exp.layout["updatemenus"][0]["buttons"][0]["args"][1]["frame"]["duration"] = 0
+                            fig_imp.layout["sliders"][0]["active"] = frame_index
+                            fig_imp.layout["updatemenus"][0]["buttons"][0]["args"][1]["frame"]["duration"] = 0
                         except Exception:
                             pass
                     st.plotly_chart(fig_imp, use_container_width=True)
@@ -303,6 +303,7 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df_sorted, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
