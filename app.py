@@ -251,10 +251,12 @@ if not df.empty:
             df_exp.groupby("País", as_index=False)["Valor US$ FOB"]
             .sum().sort_values("Valor US$ FOB", ascending=False).head(10)
         )
+        df_exp_top['País'] = df_exp_top['País'].replace(traducao_invertida)
         df_imp_top = (
             df_imp.groupby("País", as_index=False)["Valor US$ FOB"]
             .sum().sort_values("Valor US$ FOB", ascending=False).head(10)
         )
+        df_imp_top['País'] = df_imp_top['País'].replace(traducao_invertida)
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("🌍 Top 10 Exportações")
@@ -278,3 +280,4 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
