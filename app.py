@@ -154,7 +154,8 @@ if not df.empty:
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
 
     if "MêsNum" in df.columns:
-        df["Mês"] = pd.to_numeric(df["MêsNum"], errors="coerce").map(meses)
+        df["MêsNum"] = pd.to_numeric(df["MêsNum"], errors="coerce")
+        df["Mês"] = df["MêsNum"].map(meses)
 
     # Criar período
     if periodo == "Mensal" and "MêsNum" in df.columns:
@@ -258,3 +259,4 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
