@@ -210,7 +210,7 @@ if not df.empty:
             locations="País",
             locationmode="country names",
             color="Valor US$ FOB",
-            color_continuous_scale="blugrn",
+            color_continuous_scale="Blues",
             animation_frame="Período")
         st.plotly_chart(fig_exp, use_container_width=True)
 
@@ -261,7 +261,7 @@ if not df.empty:
             fig_exp_top = px.bar(
                 df_exp_top, x="Valor US$ FOB", y="País",
                 orientation="h", text_auto=".2s",
-                color="Valor US$ FOB", color_continuous_scale="blugrn"
+                color="Valor US$ FOB", color_continuous_scale="Blues"
             )
             fig_exp_top.update_layout(yaxis=dict(autorange="reversed"))
             st.plotly_chart(fig_exp_top, use_container_width=True)
@@ -278,4 +278,5 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
 
