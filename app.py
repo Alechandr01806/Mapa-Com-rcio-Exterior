@@ -12,9 +12,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 # ==============================
 @st.cache_data
 def carregar_municipios():
-    municipios = pd.read_csv("municipios.csv", dtype={"codigo_ibge": str})
+    municipios = pd.read_csv("municipios.csv", dtype={"CO_MUN_GEO": str})
     municipios["municipio_uf"] = (
-        municipios["nome_municipio"].str.strip() + " - " + municipios["nome_uf"].str.strip()
+        municipios["NO_MUN_MIN"].str.strip() + " - " + municipios["SG_UF"].str.strip()
     )
     return municipios
 
@@ -30,7 +30,7 @@ def obter_codigo_municipio(municipio_uf, municipios_df):
         st.error("Município não encontrado.")
         return None
     else:
-        return resultado.iloc[0]["codigo_ibge"]
+        return resultado.iloc[0]["CO_MUN_GEO"]
 
 
 # =======================================
@@ -237,3 +237,4 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
