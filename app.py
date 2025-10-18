@@ -179,6 +179,7 @@ if consultar:
                 conteudo = "{" + conteudo.strip().strip(",") + "}"
                 traducao_paises = ast.literal_eval(conteudo)
                 df["País"] = df["País"].replace(traducao_paises)
+                traducao_invertida = {v: k for k, v in traducao_paises.items()}
 
                 # --- Gráficos ---
                 df_exp = df[df["Fluxo"] == "export"].copy()
@@ -209,6 +210,36 @@ if consultar:
                     animation_frame="Período"
                 )
                 st.plotly_chart(fig_imp, use_container_width=True)
+                if periodo == "Mensal":
+                    periodo_atual = df["Mês"].dropna().unique()[-1]
+                    df_exp_periodo = df_exp[df_exp["Mês"] == periodo_atual].copy()
+                    df_imp_periodo = df_imp[df_imp["Mês"] == periodo_atual].copy()
+                elif periodo == "Trimestral":
+                    periodo_atual = df["Período"].dropna().unique()[-1]
+                    df_exp_periodo = df_exp[df_exp["Período"] == periodo_atual].copy()
+                    df_imp_periodo = df_imp[df_imp["Período"] == periodo_atual].copy()
+                else:
+                    periodo_atual = df["Ano"].dropna().unique()[-1]
+                    df_exp_periodo = df_exp[df_exp["Ano"] == periodo_atual].copy()
+                    df_imp_periodo = df_imp[df_imp["Ano"] == periodo_atual].copy()
+                # --- Top 10 Exportações ---
+                top10_exp = (
+                    df_exp_periodo.groupby("País", as_index=False)["Valor US$ FOB"]
+                    .sum()
+                    .sort_values(by="Valor US$ FOB", ascending=False)
+                    .head(10)
+                )
+                top10_exp["País"] = top10_exp["País"].replace(traducao_invertida)
+                st.subheader(f"🏆 Top 10 Países em Exportações — {periodo_atual}")
+                fig_top10_exp = px.bar(
+                    top10_exp,
+                    x="Valor US$ FOB",
+                    y="País",
+                    orientation="h",
+                    title=None,
+                    labels={"Valor US$ FOB": "US$ FOB", "País": "País"},
+                )
+                st.plotly_chart(fig_top10_exp, use_container_width=True)
 
                 # 📈 Comparativo
                 st.subheader("📈 Comparativo de Fluxos e Saldo")
@@ -234,3 +265,4 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
