@@ -196,7 +196,29 @@ if consultar:
                     animation_frame="Período"
                 )
                 st.plotly_chart(fig_exp, use_container_width=True)
-
+                st.subheader("🏆 Top 10 Países em Exportações")
+                df_top_exp = (
+                    df_exp.groupby("País", as_index=False)["Valor US$ FOB"]
+                    .sum()
+                    .sort_values(by="Valor US$ FOB", ascending=False)
+                    .head(10)
+                )
+                fig_top_exp = px.bar(
+                    df_top_exp,
+                    x="Valor US$ FOB",
+                    y="País",
+                    orientation="h",
+                    text="Valor US$ FOB",
+                    color="Valor US$ FOB",
+                    color_continuous_scale="blugrn",
+                )
+                fig_top_exp.update_layout(
+                    yaxis=dict(autorange="reversed"),
+                    title="Top 10 Países Exportadores",
+                    xaxis_title="Valor US$ FOB",
+                    yaxis_title=None,
+                )
+                st.plotly_chart(fig_top_exp, use_container_width=True)
                 # 🌎 Importações
                 df_imp_group = df_imp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
                 st.subheader("🌎 Importações por País")
@@ -234,5 +256,6 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
