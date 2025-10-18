@@ -199,6 +199,16 @@ if consultar:
                         color="Valor US$ FOB",
                         color_continuous_scale="blugrn",
                         animation_frame="Período")
+                    if len(df_exp_group["Período"].unique()) > 0:
+                        ultimo_periodo = sorted(df_exp_group["Período"].unique())[-1]
+                        try:
+                            frame_index = list(fig_exp.frames).index(
+                                next(f for f in fig_exp.frames if f.name == ultimo_periodo)
+                            )
+                            fig_exp.layout["sliders"][0]["active"] = frame_index
+                            fig_exp.layout["updatemenus"][0]["buttons"][0]["args"][1]["frame"]["duration"] = 0
+                        except Exception:
+                            pass
                     st.plotly_chart(fig_exp, use_container_width=True)
                     # 🌎 Importações
                     df_imp_group = df_imp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
@@ -281,6 +291,7 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
