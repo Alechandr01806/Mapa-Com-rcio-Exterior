@@ -148,6 +148,12 @@ else:
 # ======================================================
 if not df.empty:
     st.success(f"✅ {len(df)} registros carregados com sucesso!")
+    meses = {
+            1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
+            4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
+            7: "07. Julho", 8: "08. Agosto", 9: "09. Setembro",
+            10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
+        }
 
     # --- Normalização dos nomes das colunas ---
     df.rename(
@@ -165,14 +171,8 @@ if not df.empty:
     # --- Conversões ---
     if "Valor US$ FOB" in df.columns:
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
-
     if "MêsNum" in df.columns:
-        meses = {
-            1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
-            4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
-            7: "07. Julho", 8: "08. Agosto", 9: "09. Setembro",
-            10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
-        }
+        df["MêsNum"] = pd.to_numeric(df["MêsNum"], errors="coerce")
         df["Mês"] = df["MêsNum"].map(meses)
 
     # --- Criar coluna "Período" ---
@@ -278,3 +278,4 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
