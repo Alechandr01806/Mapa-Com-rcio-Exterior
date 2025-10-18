@@ -174,16 +174,29 @@ if not df.empty:
             10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
         }
         df["Mês"] = df["MêsNum"].map(meses)
-
     # --- Criar coluna "Período" ---
     if periodo == "Mensal" and "MêsNum" in df.columns:
         df["Período"] = df["Ano"].astype(str) + " - " + df["MêsNum"].astype(int).astype(str).str.zfill(2)
-    elif periodo == "Trimestral" and "MêsNum" in df.columns:
-        df["Trimestre"] = ((df["MêsNum"] - 1) // 3 + 1).astype(int)
-        df["Período"] = df["Ano"].astype(str) + " - " + df["Trimestre"].astype(str) + "ºT"
-    else:
-        df["Período"] = df["Ano"].astype(str)
-
+    elif periodo == "Trimestral":
+        if "MêsNum" not in df.columns:
+            # tentar inferir a partir de 'Mês' se existir
+            if "Mês" in df.columns:
+                meses_dict = {
+                    "Janeiro": 1, "Fevereiro": 2, "Março": 3, "Abril": 4,
+                    "Maio": 5, "Junho": 6, "Julho": 7, "Agosto": 8,
+                    "Setembro": 9, "Outubro": 10, "Novembro": 11, "Dezembro": 12
+                }
+                df["MêsNum"] = df["Mês"].replace(meses_dict)
+            else:
+                st.warning("Não foi possível identificar o mês. Exibindo apenas dados anuais.")
+                df["Período"] = df["Ano"].astype(str)
+                periodo = "Anual"
+        if "MêsNum" in df.columns:
+            df["MêsNum"] = pd.to_numeric(df["MêsNum"], errors="coerce")
+            df["Trimestre"] = ((df["MêsNum"] - 1) // 3 + 1).astype("Int64")
+            df["Período"] = df["Ano"].astype(str) + " - " + df["Trimestre"].astype(str) + "ºT"
+        else:
+            df["Período"] = df["Ano"].astype(str)
     # --- Tradução de países ---
     try:
         with open("paises.txt", "r", encoding="utf-8") as f:
@@ -280,5 +293,6 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
 
 
