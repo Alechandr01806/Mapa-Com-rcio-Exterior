@@ -279,8 +279,10 @@ if not df.empty:
             st.plotly_chart(fig_imp_top, use_container_width=True)
 
     # 📋 Mostrar base
+    df_sorted = df.sort_values(by=['Ano', 'Mês'])
     with st.expander("📋 Mostrar Base de Dados"):
-        st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+        st.dataframe(df_sorted, use_container_width=True)
+
 
 
 
