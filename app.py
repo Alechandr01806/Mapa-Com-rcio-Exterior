@@ -179,7 +179,7 @@ if consultar:
                 conteudo = "{" + conteudo.strip().strip(",") + "}"
                 traducao_paises = ast.literal_eval(conteudo)
                 # Traduz para inglês (necessário para o mapa Plotly)
-                df["País_Mapa"] = df["País"].replace(traducao_paises)
+                df["País"] = df["País"].replace(traducao_paises)
                 traducao_invertida = {v: k for k, v in traducao_paises.items()}
 
 
@@ -192,7 +192,7 @@ if consultar:
                 st.subheader("🌍 Exportações por País")
                 fig_exp = px.choropleth(
                     df_exp_group,
-                    locations="País_Mapa",
+                    locations="País",
                     locationmode="country names",
                     color="Valor US$ FOB",
                     color_continuous_scale="blugrn",
@@ -260,6 +260,7 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
