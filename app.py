@@ -85,7 +85,7 @@ modo = st.sidebar.radio(
     horizontal=False
 )
 
-df = pd.DataFrame()  # base vazia que será preenchida
+df = pd.DataFrame()  # base vazia
 
 # ======================================================
 # 🚀 MODO 1: API DO COMEXSTAT
@@ -123,59 +123,40 @@ if modo == "Usar API do ComexStat":
 else:
     st.sidebar.info("O arquivo deve conter as colunas: 'Ano', 'Fluxo', 'Descrição Seção', 'País', 'Valor US$ FOB'")
     arquivo = st.sidebar.file_uploader("Envie seu arquivo CSV ou Excel", type=["csv", "xlsx", "xls"])
-
     periodo = st.sidebar.radio("Tipo de visualização:", ["Mensal", "Trimestral", "Anual"], horizontal=True)
 
     if arquivo is not None:
         try:
-            if arquivo.name.endswith(".csv"):
-                df = pd.read_csv(arquivo)
-            else:
-                df = pd.read_excel(arquivo)
+            df = pd.read_csv(arquivo) if arquivo.name.endswith(".csv") else pd.read_excel(arquivo)
         except Exception as e:
             st.error(f"Erro ao ler o arquivo: {e}")
             st.stop()
 
-        # Verificar colunas obrigatórias
-        obrigatorias = ["Ano", "Fluxo", "Descrição Seção", "País"]
-        faltando = [c for c in obrigatorias if c not in df.columns]
-        if faltando:
-            st.error(f"⚠️ O arquivo enviado está faltando as colunas: {', '.join(faltando)}")
-            st.stop()
-
 # ======================================================
-# 🔄 PROCESSAMENTO E VISUALIZAÇÃO (COMUM AOS DOIS)
+# 🔄 PROCESSAMENTO E VISUALIZAÇÃO
 # ======================================================
 if not df.empty:
     st.success(f"✅ {len(df)} registros carregados com sucesso!")
+
     meses = {
-            1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
-            4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
-            7: "07. Julho", 8: "08. Agosto", 9: "09. Setembro",
-            10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
-        }
+        1: "01. Janeiro", 2: "02. Fevereiro", 3: "03. Março",
+        4: "04. Abril", 5: "05. Maio", 6: "06. Junho",
+        7: "07. Julho", 8: "08. Agosto", 9: "09. Setembro",
+        10: "10. Outubro", 11: "11. Novembro", 12: "12. Dezembro"
+    }
 
-    # --- Normalização dos nomes das colunas ---
-    df.rename(
-        columns={
-            "year": "Ano",
-            "country": "País",
-            "section": "Descrição Seção",
-            "metricFOB": "Valor US$ FOB",
-            "flow": "Fluxo",
-            "monthNumber": "MêsNum"
-        },
-        inplace=True,
-    )
+    df.rename(columns={
+        "year": "Ano", "country": "País", "section": "Descrição Seção",
+        "metricFOB": "Valor US$ FOB", "flow": "Fluxo", "monthNumber": "MêsNum"
+    }, inplace=True)
 
-    # --- Conversões ---
     if "Valor US$ FOB" in df.columns:
         df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
-    if "MêsNum" in df.columns:
-        df["MêsNum"] = pd.to_numeric(df["MêsNum"], errors="coerce")
-        df["Mês"] = df["MêsNum"].map(meses)
 
-    # --- Criar coluna "Período" ---
+    if "MêsNum" in df.columns:
+        df["Mês"] = pd.to_numeric(df["MêsNum"], errors="coerce").map(meses)
+
+    # Criar período
     if periodo == "Mensal" and "MêsNum" in df.columns:
         df["Período"] = df["Ano"].astype(str) + " - " + df["MêsNum"].astype(int).astype(str).str.zfill(2)
     elif periodo == "Trimestral" and "MêsNum" in df.columns:
@@ -184,18 +165,16 @@ if not df.empty:
     else:
         df["Período"] = df["Ano"].astype(str)
 
-    # --- Tradução de países ---(Pois o Mapa do Plotly não reconhece o nome das localizações em Português)
+    # Tradução de países (para os mapas)
     try:
         with open("paises.txt", "r", encoding="utf-8") as f:
-            conteudo = f.read()
-        conteudo = "{" + conteudo.strip().strip(",") + "}"
+            conteudo = "{" + f.read().strip().strip(",") + "}"
         traducao_paises = ast.literal_eval(conteudo)
         df["País"] = df["País"].replace(traducao_paises)
         traducao_invertida = {v: k for k, v in traducao_paises.items()}
     except:
         traducao_invertida = {}
 
-    # --- Separar fluxos ---
     df_exp = df[df["Fluxo"].str.lower().str.contains("export")].copy()
     df_imp = df[df["Fluxo"].str.lower().str.contains("import")].copy()
 
@@ -203,27 +182,25 @@ if not df.empty:
 
     # 🌍 MAPAS
     with tab1:
-        st.subheader("🌍 Exportações por País")
-        df_exp_group = df_exp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
-        fig_exp = px.choropleth(
-            df_exp_group,
-            locations="País",
-            locationmode="country names",
-            color="Valor US$ FOB",
-            color_continuous_scale="Blues",
-            animation_frame="Período")
-        st.plotly_chart(fig_exp, use_container_width=True)
+        if not df_exp.empty:
+            st.subheader("🌍 Exportações por País")
+            df_exp_group = df_exp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
+            fig_exp = px.choropleth(df_exp_group, locations="País", locationmode="country names",
+                                    color="Valor US$ FOB", color_continuous_scale="Blues",
+                                    animation_frame="Período")
+            st.plotly_chart(fig_exp, use_container_width=True)
+        else:
+            st.info("ℹ️ Nenhum dado de exportação disponível.")
 
-        st.subheader("🌎 Importações por País")
-        df_imp_group = df_imp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
-        fig_imp = px.choropleth(
-            df_imp_group,
-            locations="País",
-            locationmode="country names",
-            color="Valor US$ FOB",
-            color_continuous_scale="reds",
-            animation_frame="Período")
-        st.plotly_chart(fig_imp, use_container_width=True)
+        if not df_imp.empty:
+            st.subheader("🌎 Importações por País")
+            df_imp_group = df_imp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
+            fig_imp = px.choropleth(df_imp_group, locations="País", locationmode="country names",
+                                    color="Valor US$ FOB", color_continuous_scale="Reds",
+                                    animation_frame="Período")
+            st.plotly_chart(fig_imp, use_container_width=True)
+        else:
+            st.info("ℹ️ Nenhum dado de importação disponível.")
 
     # 📈 COMPARATIVO
     with tab2:
@@ -231,62 +208,53 @@ if not df.empty:
         df_exp["Fluxo"] = "Exportação"
         df_imp["Fluxo"] = "Importação"
         df_comex = pd.concat([df_exp, df_imp], ignore_index=True)
-        df_comp = df_comex.groupby(["Período", "Fluxo"], as_index=False)["Valor US$ FOB"].sum() 
-        df_pivot = df_comp.pivot_table(index="Período", columns="Fluxo", values="Valor US$ FOB", fill_value=0)
-        df_pivot["Saldo Comercial"] = df_pivot["Exportação"] - df_pivot["Importação"]
-        df_pivot = df_pivot.reset_index()
-        fig_comp = px.line(
-            df_pivot,
-            x="Período",
-            y=["Exportação", "Importação", "Saldo Comercial"],
-            markers=True,
-            labels={"value": "US$ FOB", "variable": "Indicador"},
-        )
-        st.plotly_chart(fig_comp, use_container_width=True)
+
+        if df_comex.empty:
+            st.warning("⚠️ Nenhum dado disponível para comparação.")
+        else:
+            df_comp = df_comex.groupby(["Período", "Fluxo"], as_index=False)["Valor US$ FOB"].sum()
+            df_pivot = df_comp.pivot_table(index="Período", columns="Fluxo", values="Valor US$ FOB", fill_value=0)
+
+            if "Exportação" in df_pivot.columns and "Importação" in df_pivot.columns:
+                df_pivot["Saldo Comercial"] = df_pivot["Exportação"] - df_pivot["Importação"]
+            elif "Exportação" in df_pivot.columns:
+                df_pivot["Saldo Comercial"] = df_pivot["Exportação"]
+            elif "Importação" in df_pivot.columns:
+                df_pivot["Saldo Comercial"] = -df_pivot["Importação"]
+
+            df_long = df_pivot.reset_index().melt(id_vars="Período", var_name="Indicador", value_name="US$ FOB")
+            fig_comp = px.line(df_long, x="Período", y="US$ FOB", color="Indicador", markers=True)
+            st.plotly_chart(fig_comp, use_container_width=True)
 
     # 🏆 RANKINGS
     with tab3:
         st.subheader("🏆 Principais Parceiros Comerciais")
-        df_exp_top = (
-            df_exp.groupby("País", as_index=False)["Valor US$ FOB"]
-            .sum().sort_values("Valor US$ FOB", ascending=False).head(10)
-        )
-        df_imp_top = (
-            df_imp.groupby("País", as_index=False)["Valor US$ FOB"]
-            .sum().sort_values("Valor US$ FOB", ascending=False).head(10)
-        )
-        #traduzindo novamente o nome dos países para pt-br
-        df_exp_top['País'] = df_exp_top['País'].replace(traducao_invertida)
-        df_imp_top['País'] = df_imp_top['País'].replace(traducao_invertida)
         col1, col2 = st.columns(2)
+
         with col1:
-            st.subheader("🌍 Top 10 Exportações")
-            fig_exp_top = px.bar(
-                df_exp_top, x="Valor US$ FOB", y="País",
-                orientation="h", text_auto=".2s",
-                color="Valor US$ FOB", color_continuous_scale="Blues"
-            )
-            fig_exp_top.update_layout(yaxis=dict(autorange="reversed"))
-            st.plotly_chart(fig_exp_top, use_container_width=True)
+            if df_exp.empty:
+                st.info("ℹ️ Nenhum dado de exportação para exibir ranking.")
+            else:
+                df_exp_top = df_exp.groupby("País", as_index=False)["Valor US$ FOB"].sum()
+                df_exp_top["País"] = df_exp_top["País"].replace(traducao_invertida)
+                df_exp_top = df_exp_top.sort_values("Valor US$ FOB", ascending=False).head(10)
+                fig_exp_top = px.bar(df_exp_top, x="Valor US$ FOB", y="País", orientation="h",
+                                     color="Valor US$ FOB", color_continuous_scale="Blues", text_auto=".2s")
+                fig_exp_top.update_layout(yaxis=dict(autorange="reversed"))
+                st.plotly_chart(fig_exp_top, use_container_width=True)
+
         with col2:
-            st.subheader("🌍 Top 10 Importações")
-            fig_imp_top = px.bar(
-                df_imp_top, x="Valor US$ FOB", y="País",
-                orientation="h", text_auto=".2s",
-                color="Valor US$ FOB", color_continuous_scale="reds"
-            )
-            fig_imp_top.update_layout(yaxis=dict(autorange="reversed"))
-            st.plotly_chart(fig_imp_top, use_container_width=True)
+            if df_imp.empty:
+                st.info("ℹ️ Nenhum dado de importação para exibir ranking.")
+            else:
+                df_imp_top = df_imp.groupby("País", as_index=False)["Valor US$ FOB"].sum()
+                df_imp_top["País"] = df_imp_top["País"].replace(traducao_invertida)
+                df_imp_top = df_imp_top.sort_values("Valor US$ FOB", ascending=False).head(10)
+                fig_imp_top = px.bar(df_imp_top, x="Valor US$ FOB", y="País", orientation="h",
+                                     color="Valor US$ FOB", color_continuous_scale="Reds", text_auto=".2s")
+                fig_imp_top.update_layout(yaxis=dict(autorange="reversed"))
+                st.plotly_chart(fig_imp_top, use_container_width=True)
 
     # 📋 Mostrar base
-    df_sorted = df.sort_values(by=['Ano', 'Mês'])
     with st.expander("📋 Mostrar Base de Dados"):
-        st.dataframe(df_sorted, use_container_width=True)
-
-
-
-
-
-
-
-
+        st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
