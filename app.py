@@ -92,6 +92,8 @@ with st.sidebar:
         ["Mensal", "Trimestral", "Anual"],
         horizontal=True
     )
+
+    # --- Seletor do período específico ---
     periodo_especifico = None
     if periodo == "Mensal":
         mes_opcoes = [
@@ -105,7 +107,7 @@ with st.sidebar:
     elif periodo == "Anual":
         anos_disponiveis = list(range(ano_inicio, ano_fim + 1))
         periodo_especifico = st.selectbox("Selecione o ano específico", anos_disponiveis, index=None, placeholder="Escolha um ano")
-        
+
     atualizar = st.button("🔄 Atualizar lista de municípios")
     consultar = st.button("🔍 Consultar dados")
 
@@ -126,7 +128,6 @@ if consultar:
             st.info(f"Consultando dados para **{municipio_input}** (código {codigo_municipio})...")
             df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
 
-            # 🔹 Se a API não retornar dados → permitir upload manual
             if df.empty:
                 st.warning("Nenhum dado retornado pela API. Você pode carregar um arquivo manualmente abaixo 👇")
                 arquivo_usuario = st.file_uploader(
@@ -147,7 +148,6 @@ if consultar:
                 else:
                     st.stop()
 
-            # 🔹 Se há dados (da API ou do arquivo)
             if not df.empty:
                 st.success(f"✅ {len(df)} registros carregados!")
 
@@ -193,8 +193,8 @@ if consultar:
                 conteudo = "{" + conteudo.strip().strip(",") + "}"
                 traducao_paises = ast.literal_eval(conteudo)
                 df["País"] = df["País"].replace(traducao_paises)
-                traducao_invertida = {v: k for k, v in traducao_paises.items()}
 
+                # --- 🔍 Filtro pelo período específico ---
                 if periodo_especifico:
                     if periodo == "Mensal" and "Mês" in df.columns:
                         df = df[df["Mês"] == periodo_especifico]
@@ -204,35 +204,61 @@ if consultar:
                     elif periodo == "Anual" and "Ano" in df.columns:
                         df = df[df["Ano"] == periodo_especifico]
 
-                # --- Gráficos ---
-                df_exp = df[df["Fluxo"] == "export"].copy()
-                df_imp = df[df["Fluxo"] == "import"].copy()
+                # ================================
+                # 🏆 TOP 10 EXPORTAÇÕES E IMPORTAÇÕES
+                # ================================
+                st.markdown("---")
+                if periodo_especifico:
+                    st.header(f"🏆 Principais Parceiros Comerciais — {periodo_especifico} ({periodo})")
+                else:
+                    st.header("🏆 Principais Parceiros Comerciais (período completo)")
 
-                # 🌍 Exportações
-                df_exp_group = df_exp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
-                st.subheader("🌍 Exportações por País")
-                fig_exp = px.choropleth(
-                    df_exp_group,
-                    locations="País",
-                    locationmode="country names",
-                    color="Valor US$ FOB",
-                    color_continuous_scale="blugrn",
-                    animation_frame="Período"
-                )
-                st.plotly_chart(fig_exp, use_container_width=True)
+                if not df.empty:
+                    df_exp_top = (
+                        df[df["Fluxo"] == "export"]
+                        .groupby("País", as_index=False)["Valor US$ FOB"]
+                        .sum()
+                        .sort_values("Valor US$ FOB", ascending=False)
+                        .head(10)
+                    )
 
-                # 🌎 Importações
-                df_imp_group = df_imp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
-                st.subheader("🌎 Importações por País")
-                fig_imp = px.choropleth(
-                    df_imp_group,
-                    locations="País",
-                    locationmode="country names",
-                    color="Valor US$ FOB",
-                    color_continuous_scale="reds",
-                    animation_frame="Período"
-                )
-                st.plotly_chart(fig_imp, use_container_width=True)
+                    df_imp_top = (
+                        df[df["Fluxo"] == "import"]
+                        .groupby("País", as_index=False)["Valor US$ FOB"]
+                        .sum()
+                        .sort_values("Valor US$ FOB", ascending=False)
+                        .head(10)
+                    )
+
+                    col1, col2 = st.columns(2)
+
+                    with col1:
+                        st.subheader("🌍 Top 10 Exportações")
+                        fig_exp_top = px.bar(
+                            df_exp_top,
+                            x="Valor US$ FOB",
+                            y="País",
+                            orientation="h",
+                            text_auto=".2s",
+                            color="Valor US$ FOB",
+                            color_continuous_scale="blugrn",
+                        )
+                        fig_exp_top.update_layout(yaxis=dict(autorange="reversed"))
+                        st.plotly_chart(fig_exp_top, use_container_width=True)
+
+                    with col2:
+                        st.subheader("🌎 Top 10 Importações")
+                        fig_imp_top = px.bar(
+                            df_imp_top,
+                            x="Valor US$ FOB",
+                            y="País",
+                            orientation="h",
+                            text_auto=".2s",
+                            color="Valor US$ FOB",
+                            color_continuous_scale="reds",
+                        )
+                        fig_imp_top.update_layout(yaxis=dict(autorange="reversed"))
+                        st.plotly_chart(fig_imp_top, use_container_width=True)
 
                 # 📈 Comparativo
                 st.subheader("📈 Comparativo de Fluxos e Saldo")
@@ -258,6 +284,7 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
