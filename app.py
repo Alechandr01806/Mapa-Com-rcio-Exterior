@@ -231,7 +231,7 @@ if consultar:
                     st.plotly_chart(fig_comp, use_container_width=True)
                 
                 with tab3:
-                    st.subheader(f"🏆 Principais Parceiros Comerciais — {periodo_especifico or 'Período Completo'}")
+                    st.subheader(f"🏆 Principais Parceiros Comerciais")
                     df_exp_top = (
                         df[df["Fluxo"] == "export"]
                         .groupby("País", as_index=False)["Valor US$ FOB"]
@@ -281,6 +281,7 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
+
 
 
 
