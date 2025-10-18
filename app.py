@@ -18,20 +18,17 @@ def carregar_municipios():
     )
     return municipios
 
-
 # ==================================
 # 2️⃣ Acessar o código do município
 # ==================================
 def obter_codigo_municipio(municipio_uf, municipios_df):
     municipio_uf = municipio_uf.strip().lower()
     resultado = municipios_df[municipios_df["municipio_uf"].str.lower() == municipio_uf]
-
     if len(resultado) == 0:
         st.error("Município não encontrado.")
         return None
     else:
         return resultado.iloc[0]["CO_MUN_GEO"]
-
 
 # =======================================
 # 3️⃣ Função principal da API do Comex Stat
@@ -50,7 +47,6 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
             "details": ["city", "country", "economicBlock"],
             "metrics": ["metricFOB"]
         }
-
         response = requests.post(url, json=payload, headers=headers, verify=False)
         if response.status_code == 200:
             data = response.json()
@@ -64,7 +60,6 @@ def consulta_comex(ano_inicio, ano_fim, codigo_municipio):
     df_export = consulta_fluxo("export")
     return pd.concat([df_import, df_export], ignore_index=True)
 
-
 # ===========================
 # Interface Streamlit
 # ===========================
@@ -76,23 +71,19 @@ municipios = carregar_municipios()
 
 with st.sidebar:
     st.header("⚙️ Parâmetros da consulta")
-
     municipio_input = st.selectbox(
         "Selecione o município e UF",
         sorted(municipios["municipio_uf"].unique()),
         index=None,
         placeholder="Ex: São Paulo - SP"
     )
-
     ano_inicio = st.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
     ano_fim = st.number_input("Ano final", min_value=1997, max_value=2025, value=2025)
-
     periodo = st.radio(
         "Selecione o tipo de visualização:",
         ["Mensal", "Trimestral", "Anual"],
         horizontal=True
     )
-
     atualizar = st.button("🔄 Atualizar lista de municípios")
     consultar = st.button("🔍 Consultar dados")
 
@@ -109,7 +100,6 @@ if consultar:
         st.warning("Por favor, selecione um município e UF antes de consultar.")
     else:
         codigo_municipio = obter_codigo_municipio(municipio_input, municipios)
-
         if codigo_municipio:
             st.info(f"Consultando dados para **{municipio_input}** (código {codigo_municipio})...")
             df = consulta_comex(ano_inicio, ano_fim, codigo_municipio)
@@ -161,7 +151,6 @@ if consultar:
 
                 if "Valor US$ FOB" in df.columns:
                     df["Valor US$ FOB"] = pd.to_numeric(df["Valor US$ FOB"], errors="coerce")
-
                 if "MêsNum" in df.columns:
                     df["MêsNum"] = pd.to_numeric(df["MêsNum"], errors="coerce")
                     df["Mês"] = df["MêsNum"].map(meses)
@@ -237,4 +226,3 @@ if consultar:
                 with st.expander("Mostrar Base de Dados", expanded=False):
                     st.dataframe(df, use_container_width=True)
                     st.write("Fonte: Comexstat")
-
