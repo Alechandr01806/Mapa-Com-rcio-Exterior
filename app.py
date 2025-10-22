@@ -185,10 +185,9 @@ if not df.empty:
     with tab1:
         if not df_exp.empty:
             st.subheader("🌍 Exportações por País")
-            cor = st.radio("Escolha o Tema:", ["blues", "blugrn", "Teal"])
             df_exp_group = df_exp.groupby(["Período", "País"], as_index=False)["Valor US$ FOB"].sum()
             fig_exp = px.choropleth(df_exp_group, locations="País", locationmode="country names",
-                                    color="Valor US$ FOB", color_continuous_scale= cor,
+                                    color="Valor US$ FOB", color_continuous_scale="blugrn",
                                     animation_frame="Período")
             st.plotly_chart(fig_exp, use_container_width=True)
         else:
@@ -260,6 +259,7 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
 
 
 
