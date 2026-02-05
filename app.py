@@ -199,6 +199,23 @@ if not df.empty:
             fig_imp = px.choropleth(df_imp_group, locations="País", locationmode="country names",
                                     color="Valor US$ FOB", color_continuous_scale="Reds",
                                     animation_frame="Período")
+            fig_imp = fig_imp.update_layout(
+                font_family="Arial",
+                font_color="#FFFFFF",
+                title_font_family="Arial",
+                title_font_color="#FFFFFF",
+                legend_title_font_color="#FFFFFF",
+                width=900,
+                height=500,
+                geo=dict(
+                    showframe=False,
+                    showcoastlines=True,
+                    projection_type='equirectangular',
+                    bgcolor= '#F4F4F0',
+                    landcolor='rgba(206,206,206,1)',
+                )
+                margin={"r":0,"t":0,"l":0,"b":0},
+            )
             st.plotly_chart(fig_imp, use_container_width=True)
         else:
             st.info("ℹ️ Nenhum dado de importação disponível.")
@@ -259,6 +276,7 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
 
 
 
