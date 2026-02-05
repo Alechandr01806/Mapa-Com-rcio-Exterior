@@ -319,11 +319,12 @@ st.sidebar.markdown(
     <div class="sidebar-footer">
         Feito por <b>@alech_andro</b><br>
         <a href="https://github.com/Alechandr01806" target="_blank">🐙 GitHub</a> •
-        <a href="www.linkedin.com/in/alexandro-rocha-54a54a300" target="_blank">💼 LinkedIn</a>
+        <a href="https://www.linkedin.com/in/alexandro-rocha-54a54a300/" target="_blank">💼 LinkedIn</a>
     </div>
     """,
     unsafe_allow_html=True
 )
+
 
 
 
