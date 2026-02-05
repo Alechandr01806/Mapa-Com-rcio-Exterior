@@ -289,7 +289,28 @@ if not df.empty:
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
 
-st.sidebar.markdown("Autor: ")
+st.sidebar.markdown(
+    """
+    <style>
+    .sidebar-footer {
+        position: fixed;
+        bottom: 10px;
+        width: 13rem;
+        text-align: center;
+        font-size: 0.9em;
+        opacity: 0.8;
+    }
+    </style>
+
+    <div class="sidebar-footer">
+        Feito por <b>@alech_andro</b><br>
+        <a href="https://github.com/Alechandr01806" target="_blank">🐙 GitHub</a>
+        <a href="www.linkedin.com/in/alexandro-rocha-54a54a300">💼 LinkedIn</a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 
 
