@@ -292,20 +292,34 @@ if not df.empty:
 st.sidebar.markdown(
     """
     <style>
+    /* Cria espaço no final da sidebar para não sobrepor conteúdo */
+    [data-testid="stSidebar"] > div:first-child {
+        padding-bottom: 90px;
+    }
+
     .sidebar-footer {
         position: fixed;
-        bottom: 10px;
-        width: 13rem;
+        bottom: 0;
+        left: 0;
+        width: 100%;
         text-align: center;
         font-size: 0.9em;
-        opacity: 0.8;
+        opacity: 0.85;
+        padding: 10px 0;
+        background: linear-gradient(to top, white 70%, rgba(255,255,255,0));
+    }
+
+    .sidebar-footer a {
+        text-decoration: none;
+        color: inherit;
+        margin: 0 6px;
     }
     </style>
 
     <div class="sidebar-footer">
         Feito por <b>@alech_andro</b><br>
-        <a href="https://github.com/Alechandr01806" target="_blank">🐙 GitHub</a>
-        <a href="www.linkedin.com/in/alexandro-rocha-54a54a300">💼 LinkedIn</a>
+        <a href="https://github.com/Alechandr01806" target="_blank">🐙 GitHub</a> •
+        <a href="www.linkedin.com/in/alexandro-rocha-54a54a300" target="_blank">💼 LinkedIn</a>
     </div>
     """,
     unsafe_allow_html=True
