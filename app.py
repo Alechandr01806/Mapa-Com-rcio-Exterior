@@ -217,9 +217,6 @@ if not df.empty:
                 ),
                 margin={"r":0,"t":0,"l":0,"b":0},
             )
-            fig.update_geos(fitbounds="locations", visible=True)
-            fig.update_geos(showframe=False, showcoastlines=True)
-            fig.update_layout(margin={"r":0,"t":30,"l":0,"b":0})
             st.plotly_chart(fig_imp, use_container_width=True)
         else:
             st.info("ℹ️ Nenhum dado de importação disponível.")
@@ -280,6 +277,7 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
 
 
 
