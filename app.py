@@ -101,8 +101,8 @@ if modo == "Usar API do ComexStat":
         placeholder="Ex: São Paulo - SP"
     )
 
-    ano_inicio = st.sidebar.number_input("Ano inicial", min_value=1997, max_value=2025, value=2020)
-    ano_fim = st.sidebar.number_input("Ano final", min_value=1997, max_value=2025, value=2025)
+    ano_inicio = st.sidebar.number_input("Ano inicial", min_value=1997, max_value=2026, value=2020)
+    ano_fim = st.sidebar.number_input("Ano final", min_value=1997, max_value=2026, value=2026)
     periodo = st.sidebar.radio("Tipo de visualização:", ["Mensal", "Trimestral", "Anual"], horizontal=True)
 
     consultar = st.sidebar.button("🔍 Consultar dados")
@@ -288,6 +288,7 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
 
 
 
