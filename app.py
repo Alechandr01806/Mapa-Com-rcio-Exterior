@@ -289,6 +289,8 @@ if not df.empty:
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
 
+st.sidebar.markdown("Autor: ")
+
 
 
 
