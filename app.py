@@ -205,7 +205,6 @@ if not df.empty:
                 font_color="#FFFFFF",
                 title_font_family="Arial",
                 title_font_color="#FFFFFF",
-                legend_title_font_color="#FFFFFF",
                 width=900,
                 height=500,
                 geo=dict(
@@ -277,6 +276,7 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
 
 
 
