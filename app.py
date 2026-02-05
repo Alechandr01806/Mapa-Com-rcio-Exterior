@@ -202,9 +202,7 @@ if not df.empty:
                                     animation_frame="Período")
             fig_imp = fig_imp.update_layout(
                 font_family="Arial",
-                font_color="#FFFFFF",
                 title_font_family="Arial",
-                title_font_color="#FFFFFF",
                 width=900,
                 height=500,
                 geo=dict(
@@ -276,6 +274,7 @@ if not df.empty:
     # 📋 Mostrar base
     with st.expander("📋 Mostrar Base de Dados"):
         st.dataframe(df.sort_values(by=["Ano"]), use_container_width=True)
+
 
 
 
